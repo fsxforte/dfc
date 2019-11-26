@@ -5,13 +5,9 @@ import math
 from matplotlib import style
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
-#See Styles
-#print(plt.style.available)
 
 from engine import get_data
 
-df = get_data.fetch_data()
-        
 def monte_carlo_sim(df, num_simulations, predicted_periods):
 
 	returns = df['log_returns']
@@ -78,3 +74,7 @@ def brownian_motion(df, num_simulations, predicted_periods):
 		simulation_df[x] = prices
 
 	return simulation_df
+
+def compute_percent_crisis(df):
+	df = get_data.fetch_data()
+
