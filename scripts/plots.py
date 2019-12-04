@@ -6,11 +6,11 @@ from engine import get_data
 from engine import monte_carlo
 
 
-def plot_prices():
+def plot_prices(df):
 	'''
 	Function to plot the monte carlo prices. 
 	'''
-	df = get_data.fetch_data()
+	df = df
 	SIM_NO = 1000
 	PERIOD_NO = 1000
 	sim = monte_carlo.brownian_motion(df, SIM_NO, PERIOD_NO)
@@ -23,14 +23,14 @@ def plot_prices():
 	plt.title(str(SIM_NO)+ ' Brownian motion simulations of the Grin/USDC price', fontsize = 16)
 	plt.show()
 
-def dist_prices():
+def dist_prices(df):
 	'''
 	Plot distribution of final prices.
 	'''
-	df = get_data.fetch_data()
+	df = df
 	SIM_NO = 1000
 	PERIOD_NO = 1000
-	sim = monte_carlo.monte_carlo_sim(df, SIM_NO, PERIOD_NO)
+	sim = monte_carlo.brownian_motion(df, SIM_NO, PERIOD_NO)
 	final_prices = list(sim.iloc[-1])
 	first_price = list(sim.iloc[0])[0]
 	liquidation_price = first_price*(2/3)
