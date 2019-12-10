@@ -58,15 +58,37 @@ subplot = df.plot(kind='kde', xlim=(-4, 4))
 #Multiply the standardized returns by the current volatility estimate (scaling all returns by the current conditional volatility estimate)
 scaled_resids = res_normal.conditional_volatility[-1] * unit_var_resid
 
-#Convert to the right format for the Kernel Density estimation
-array = log_returns.to_numpy()
-array_returns = array.reshape(-1,1)
+#####################################
+##### Kernel Density Estimation #####
+#####################################
 
-#Fit the Epanechnikov kernel
-kde = KernelDensity(kernel = 'epanechnikov').fit(array_returns)
-X_plot = np.linspace(-1, 1, 1000)[:, np.newaxis]
-log_dens = kde.score_samples(X_plot)
+#Convert to the right format for the Kernel Density estimation
+X = 100*log_returns.to_numpy().reshape(-1,1)
+
+X_plot = np.linspace((array.min()-1), array.max()+1, 1000)[:, np.newaxis]
+
+true_dens = (0.3 * norm(0, 1).pdf(X_plot[:, 0])
+             + 0.7 * norm(5, 1).pdf(X_plot[:, 0]))
 
 fig, ax = plt.subplots()
-ax.plot(X_plot[:, 0], np.exp(log_dens))
+ax.fill(X_plot[:, 0], true_dens, fc='black', alpha=0.2,
+        label='input distribution')
+colors = ['navy', 'cornflowerblue', 'darkorange']
+kernels = ['gaussian', 'tophat', 'epanechnikov']
+lw = 2
+
+for color, kernel in zip(colors, kernels):
+    kde = KernelDensity(kernel=kernel, bandwidth=0.5).fit(X)
+    log_dens = kde.score_samples(X_plot)
+    ax.plot(X_plot[:, 0], np.exp(log_dens), color=color, lw=lw,
+            linestyle='-', label="kernel = '{0}'".format(kernel))
+
+ax.legend(loc='upper left')
+ax.plot(X[:, 0], -0.005 - 0.01 * np.random.random(X.shape[0]), '+k')
+
 plt.show()
+
+#Can only sample from 'gaussian', 'tophat' --> Go with tophat as closer to epanechnikov
+kde = KernelDensity(kernel='tophat', bandwidth=0.5).fit(X)
+#Sample from the data
+new_data = kde.sample(1000)

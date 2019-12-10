@@ -13,7 +13,7 @@ def fetch_data():
 	Fetch Grin/USDC price data from the Poloniex exchange, for the period 01 Nov until 21 Nov. 
 	'''
 	POLONIEX_PUBLIC_ENDPOINT = 'https://poloniex.com/public'
-	query_params = {'command':'returnChartData', 'currencyPair': 'USDC_GRIN', 'period': '1800', 'start': '1546300800', 'end': str(time_now)}
+	query_params = {'command':'returnChartData', 'currencyPair': 'USDT_ETH', 'period': '1800', 'start': '1546300800', 'end': str(time_now)}
 	data = requests.get(url = POLONIEX_PUBLIC_ENDPOINT, params = query_params)
 	data = data.json()
 	df = pd.DataFrame(data)
