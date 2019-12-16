@@ -1,10 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import datetime as dt
 
 from engine import get_data
 from engine import monte_carlo
-
+from scripts import analysis
 
 def plot_prices(df):
 	'''
@@ -43,9 +44,48 @@ def dist_prices(df):
 	plt.title('Distribution of resultant prices', fontsize = 16)
 	plt.show()
 
+#Plot a panel of all the prices for the 5 assets
+def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
+	df = analysis.make_close_matrix()
+	df = df[start_date:end_date]
+	fig, ax = plt.subplots(5, 1, sharex = 'col')
+	fig.add_subplot(111, frameon=False)
+	plt.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
+	ax[0].plot(df['ETH'])
+	ax[0].set_title('ETH', fontsize=16)
+	ax[1].plot(df['DAI'])
+	ax[1].set_title('DAI', fontsize=16)
+	ax[2].plot(df['REP'])
+	ax[2].set_title('Augur', fontsize=16)
+	ax[3].plot(df['ZRX'])
+	ax[3].set_title('0x', fontsize=16)
+	ax[4].plot(df['BAT'])
+	ax[4].set_title('BAT', fontsize=16)
+	plt.grid(False)
+	fig.autofmt_xdate()
+	plt.ylabel('Close price', fontsize=16)
+	plt.show()
 
 
+def plot_log_returns(start_date: dt.datetime, end_date: dt.datetime):
+	df = analysis.make_logreturns_matrix()
+	df = df[start_date:end_date]
+	fig, ax = plt.subplots(5, 1, sharex = 'col')
+	fig.add_subplot(111, frameon=False)
+	plt.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
+	ax[0].plot(df['ETH'])
+	ax[0].set_title('ETH', fontsize=16)
+	ax[1].plot(df['DAI'])
+	ax[1].set_title('DAI', fontsize=16)
+	ax[2].plot(df['REP'])
+	ax[2].set_title('Augur', fontsize=16)
+	ax[3].plot(df['ZRX'])
+	ax[3].set_title('0x', fontsize=16)
+	ax[4].plot(df['BAT'])
+	ax[4].set_title('BAT', fontsize=16)
+	plt.grid(False)
+	fig.autofmt_xdate()
+	plt.ylabel('Close price', fontsize=16)
+	plt.show()
 
-
-#How many of these prices correspond to a loss of more than the 100-150% margin?
-
+#Plot a panel of all the returns for the 5 assets
