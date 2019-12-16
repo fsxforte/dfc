@@ -5,16 +5,17 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from scipy.stats import norm
 
-
-
 from engine import get_data
 
 #####################################
 ##### Kernel Density Estimation #####
 #####################################
 
-def estimate_kde(dist_type: str, df):
-	log_returns = df['log_returns'].dropna()
+def estimate_kde(dist_type: str, log_returns):
+	'''
+	Kernel Density estimation based on historical data.
+	:log_returns: series of returns for the pair of interest.
+	'''
 	#Convert to the right format for the Kernel Density estimation
 	X = log_returns.to_numpy().reshape(-1,1)
 	kde = KernelDensity(kernel=dist_type, bandwidth=0.003).fit(X)
@@ -24,10 +25,12 @@ def estimate_kde(dist_type: str, df):
 ######## KDE plotting ###############
 #####################################
 
-def plot_kdes():
-	df = get_data.fetch_data()
-	df_subset = df[dt.datetime(2019, 4, 1):]
-	log_returns = df_subset['log_returns']
+def plot_kdes(log_returns):
+	'''
+	Plot KDEs estimated with three different estimation methods. 
+	:log_returns: series of returns for the pair of interest.
+	'''
+	#Convert to the right format for the Kernel Density estimation
 	X = log_returns.to_numpy().reshape(-1,1)
 	X_plot = np.linspace((X.min()-1), X.max()+1, 1000)[:, np.newaxis]
 

@@ -9,114 +9,38 @@ import matplotlib.mlab as mlab
 from engine import get_data
 from engine import kernel_estimation
 
-# def monte_carlo_sim(df, num_simulations, predicted_periods):
-
-# 	returns = df['log_returns']
-# 	prices = df['close']
-# 	last_price = prices.iloc[-1]
-
-# 	#Create Each Simulation as a Column in df
-# 	simulation_df = pd.DataFrame()
-# 	for x in range(num_simulations):
-# 		count = 0
-# 		period_vol = returns.std()
-# 		price_series = []
-
-# 		#Append Start Value
-# 		price = last_price * (1 + np.random.normal(0, period_vol))
-# 		price_series.append(
-# 			price)
-
-# 		#Series for predicted Days
-# 		for i in range(predicted_periods):
-# 			price = price_series[count] * (1 + np.random.normal(0, period_vol))
-# 			price_series.append(price)
-# 			count += 1
-
-# 		simulation_df[x] = price_series
-
-# 	return simulation_df
-
-
-# def brownian_motion(df, num_simulations, predicted_periods):
-
-# 	returns = df['log_returns']
-# 	prices = df['close']
-# 	last_price = prices.iloc[-1]
-
-# 	#Note we are assuming drift here
-# 	simulation_df = pd.DataFrame()
-
-# 	#Create Each Simulation as a Column in df
-# 	for x in range(num_simulations):
-
-# 		#Inputs
-# 		count = 0
-# 		avg_period_ret = returns.mean()
-# 		variance = returns.var()
-
-# 		period_vol = returns.std()
-# 		period_drift = avg_period_ret - (variance/2)
-# 		drift = period_drift - 0.5 * period_vol ** 2
-
-# 		#Append Start Value
-# 		prices = []
-
-# 		shock = drift + period_vol * np.random.normal()
-# 		last_price * math.exp(shock)
-# 		prices.append(last_price)
-
-# 		for i in range(predicted_periods):
-
-# 			shock = drift + period_vol * np.random.normal()
-# 			price = prices[count] * math.exp(shock)
-# 			prices.append(price)
-# 			count += 1
-
-# 		simulation_df[x] = prices
-
-# 	return simulation_df
-
-# def compute_percent_crisis(df):
-# 	df = get_data.fetch_data()
-
-def monte_carlo_simulator(df, num_simulations, predicted_periods, dist_type: str):
+def monte_carlo_simulator(from_sym, to_sym, start_time_historical, end_time_historical, dist_type, num_simulations, predicted_periods):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
+	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
+	:df:
+	:dist_type: KDE estimator to use, choices are 'gaussian' or 'tophat'.
+	:num_simulations: number of runs of simulation to perform. 
+	:predicted periods: number of periods to predict into the future. 
 	'''
-	kde = kernel_estimation.estimate_kde(dist_type, df)
-	log_returns = df['log_returns'].dropna()
-	#Convert to the right format for the Kernel Density estimation
+	df = get_data.create_df(from_sym, to_sym)
+	df = df[start_time_historical:end_time_historical]
 
+	log_returns = get_data.create_logrets_series(from_sym, to_sym)
+	log_returns = log_returns[start_time_historical:end_time_historical]
+
+	#Perform kernel density estimation
+	kde = kernel_estimation.estimate_kde(dist_type, log_returns)
+
+	#Price level data
 	initial_price = df['close'].iloc[-1]
 
-	#Note we are assuming drift here
-	simulation_df = pd.DataFrame()
+	mu = log_returns.mean()
 
-	#Create Each Simulation as a Column in df
-	for x in range(num_simulations):
+	sigma = log_returns.std()
 
-		#Inputs
-		count = 0
-		avg_period_ret = log_returns.mean()
-		period_vol = log_returns.std()
-		period_var = log_returns.var()
+	simulation = {}
+	for sim in range(num_simulations):
+		simulation['Simulation' + str(sim)] = [initial_price]
+		for days in range(predicted_periods):
+			next_day = simulation['Simulation' + str(sim)][-1]*np.exp((mu-(sigma**2)/2) + sigma*kde.sample(1)[0][0])
+			simulation['Simulation' + str(sim)].append(next_day)
 
-		#Analytical params
-		period_drift = avg_period_ret - (period_var/2)
-		drift = period_drift - 0.5 * period_vol ** 2
+	return simulation
 
-		#Append Start Value
-		prices = []
-		prices.append(initial_price)
-
-		for i in range(predicted_periods):
-
-			shock = drift + period_vol * kde.sample(1)[0][0]
-			price = prices[count] * math.exp(shock)
-			prices.append(price)
-			count += 1
-
-		simulation_df[x] = prices
-
-	return simulation_df
+simulations = pd.DataFrame(simulations)

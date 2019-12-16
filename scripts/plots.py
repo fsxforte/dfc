@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import datetime as dt
+import numpy as np
 
 from engine import get_data
 from engine import monte_carlo
@@ -88,4 +89,11 @@ def plot_log_returns(start_date: dt.datetime, end_date: dt.datetime):
 	plt.ylabel('Close price', fontsize=16)
 	plt.show()
 
-#Plot a panel of all the returns for the 5 assets
+def correlation_heatmap(corr_df):
+	mask = np.zeros_like(corr_df)
+	mask[np.triu_indices_from(mask)] = True
+	#generate plot
+	sns.heatmap(corr_df, cmap='RdYlGn', vmax=1.0, vmin=-1.0 , mask = mask, linewidths=2.5)
+	plt.yticks(rotation=0) 
+	plt.xticks(rotation=90) 
+	plt.show()

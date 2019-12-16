@@ -47,5 +47,37 @@ def create_df(from_sym: str, to_sym: str, allData: str = 'true'):
 	df = pd.io.json.json_normalize(api_response['Data']['Data'])
 	df['time'] = pd.to_datetime(df['time'], unit = 's')
 	df = df.set_index('time')
-
+	df.replace(0.0, np.nan, inplace=True)
 	return df
+
+def create_close_df():
+	#Build matrix of close prices for MCD tokens
+	close_master = pd.DataFrame()
+	for token in constants.MCD_TOKENS:
+		token_df = create_df(from_sym = token, to_sym = 'USDT')
+		close = token_df['close']
+		close = close.rename(token)
+		close_master = pd.concat([close_master, close], axis = 1)
+		close_master.replace(0.0, np.nan, inplace=True)
+	return close_master
+
+def create_logrets_df():
+	#Build matrix of close prices for MCD tokens
+	logreturns_master = pd.DataFrame()
+	for token in constants.MCD_TOKENS:
+		token_df = create_df(from_sym = token, to_sym = 'USDT')
+		token_df.replace(0.0, np.nan, inplace=True)
+		rets = np.log(token_df['close']) - np.log(token_df['close'].shift(1))
+		rets = rets.rename(token)
+		logreturns_master = pd.concat([logreturns_master, rets], axis = 1)
+	return logreturns_master
+
+def create_logrets_series(from_sym: str, to_sym: str):
+	'''
+	Create a series of log returns for a given pair.
+	'''
+	df = create_df(from_sym, to_sym)
+	df.replace(0.0, np.nan, inplace=True)
+	log_returns = np.log(df['close']) - np.log(df['close'].shift(1))
+	log_returns = log_returns.dropna()
+	return log_returns
