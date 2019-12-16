@@ -1,38 +1,25 @@
 import pandas as pd
+import numpy as np
 
 from engine import get_data
-from engine import monte_carlo
+import constants
 
-df = get_data.fetch_data()
+def make_close_matrix():
+	#Build matrix of close prices for MCD tokens
+	close_master = pd.DataFrame()
+	for token in constants.MCD_TOKENS:
+		token_df = get_data.create_df(from_sym = token, to_sym = 'USDT')
+		close = token_df['close']
+		close = close.rename(token)
+		close_master = pd.concat([close_master, close], axis = 1)
+	return close_master
 
-#focus just on the crash period
-df = df[4896:]
-
-#5941 to the end --> 1045 steps
-
-simulation_results = monte_carlo.brownian_motion(df, 1045, 1000)
-
-
-def crash_proportions(number_of_steps: int):
-	#Inspect last row of simulation results
-	resultant_prices = simulation_results.iloc[[number_of_steps]].values
-	resultant_prices = list(resultant_prices[0])
-	crashes = []
-	for price in resultant_prices:
-		if price < simulation_results.iloc[[0]][0].values[0]*2/3:
-			crashes.append(price)
-	proportion_of_cases = len(crashes)/len(resultant_prices)
-	return proportion_of_cases
-
-proportion_defaults = []
-for i in list(range(1046)):
-	proportion = crash_proportions(i)
-	timestamp = df.iloc[[i]].timestamp.values[0]
-	proportion_tuple = (timestamp, proportion)
-	proportion_defaults.append(proportion_tuple)
-
-
-df2 = pd.DataFrame(proportion_defaults, columns=['timestamp', 'proportion'])
-df2['timestamp'] = pd.to_datetime(df2['timestamp'], unit='s')
-
-df2 = df2.set_index('timestamp')
+def make_logreturns_matrix():
+	#Build matrix of close prices for MCD tokens
+	logreturns_master = pd.DataFrame()
+	for token in constants.MCD_TOKENS:
+		token_df = get_data.create_df(from_sym = token, to_sym = 'USDT')
+		rets = np.log(token_df['close']) - np.log(token_df['close'].shift(1))
+		rets = rets.rename(token)
+		logreturns_master = pd.concat([logreturns_master, rets], axis = 1)
+	return logreturns_master
