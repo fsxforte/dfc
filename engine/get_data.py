@@ -40,6 +40,48 @@ def get_cryptocompare_data(from_sym: str, to_sym: str, exchange: str = None, all
 
 	return requests.get(url=api_endpoint, params=params, headers={'authorization': API_KEY})
 
+def get_CDP_data():
+	'''
+	Retrieve data on CDPs from Maker API.
+	'''
+	query = """
+	{
+	allCups(
+		condition: { deleted: false },
+		orderBy: RATIO_ASC
+	) {
+		totalCount
+		pageInfo {
+		hasNextPage
+		hasPreviousPage
+		endCursor
+		}
+		nodes {
+		id
+		ire
+		tab
+		lad
+		art
+		ink
+		ratio
+		actions(first: 1) {
+			nodes {
+			act
+			time
+			}
+		}
+		}
+	}
+	}
+	"""
+	request = requests.post('https://sai-mainnet.makerfoundation.com/v1', json={'query': query})
+
+	if request.status_code == 200:
+		return request.json()
+	else:
+		raise Exception("Query failed to run by returning code of {}. {}".format(request.status_code, query))
+
+
 #Make into DataFrame
 def create_df(from_sym: str, to_sym: str, allData: str = 'true'):
 	#Retrieve data from the API
