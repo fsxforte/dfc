@@ -35,4 +35,21 @@ sns.distplot(df['liquidation_price'])
 df.sort_values(by = 'liquidation_price', inplace=True, ascending = False)
 df['cumulative_eth']=df['ink'].cumsum()
 
+#Plot of the liquidation price
 df.plot(x = 'cumulative_eth', y = 'liquidation_price')
+
+def plot_liquidation_price_vol(df):
+	'''
+	Plot liquidation price vs. ETH quantity.
+	'''
+	SIM_NO = 1000
+	PERIOD_NO = 1000
+	fig, ax = plt.subplots()
+	df.plot(x = 'cumulative_eth', y = 'liquidation_price', ax = ax)
+	ax.set_ylabel('ETH/USD price', fontsize = 16)
+	ax.set_xlabel('ETH quantity (cumulative)', fontsize = 16)
+	ax.tick_params(axis='both', which='major', labelsize=16)
+	plt.title('Price vs. ETH volume for liquidation', fontsize = 16)
+	ax.get_legend().remove()
+	fig.savefig('pricevseth.png', bbox_inches = 'tight', dpi = 600)
+	plt.show()
