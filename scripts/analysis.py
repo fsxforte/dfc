@@ -42,8 +42,6 @@ def plot_liquidation_price_vol(df):
 	'''
 	Plot liquidation price vs. ETH quantity.
 	'''
-	SIM_NO = 1000
-	PERIOD_NO = 1000
 	fig, ax = plt.subplots()
 	df.plot(x = 'cumulative_eth', y = 'liquidation_price', ax = ax)
 	ax.set_ylabel('ETH/USD price', fontsize = 16)
@@ -52,4 +50,32 @@ def plot_liquidation_price_vol(df):
 	plt.title('Price vs. ETH volume for liquidation', fontsize = 16)
 	ax.get_legend().remove()
 	fig.savefig('pricevseth.png', bbox_inches = 'tight', dpi = 600)
+	plt.show()
+
+#What is the current ETH price? --> approx 130 USD as of 18 December 2019
+#Price drops
+ETH_vol_116 = df['ink'][df['liquidation_price']>116].sum()
+ETH_vol_120 = df['ink'][df['liquidation_price']>120].sum()
+ETH_vol_100 = df['ink'][df['liquidation_price']>100].sum()
+
+#How much volume would be sold for different prices?
+liquidations = {}
+for i in range(101):
+	bite_price = 130*(100-i)/100
+	eth_vol = df['ink'][df['liquidation_price']>bite_price].sum()
+	liquidations[i] = eth_vol
+
+df_liquidations = pd.DataFrame.from_dict(liquidations, orient = 'index')
+
+def plot_liquidation_price_drops(df_liquidations):
+	'''
+	Plot correspondence between percentage changes in price and ETH volumes.
+	'''
+	fig, ax = plt.subplots()
+	df_liquidations.plot(ax = ax)
+	ax.set_ylabel('ETH volume', fontsize = 16)
+	ax.set_xlabel('Percentage drop in price from $130 18 Dec 2019', fontsize = 16)
+	ax.tick_params(axis='both', which='major', labelsize=16)
+	plt.title('ETH vols and percentage price drops', fontsize = 16)
+	fig.savefig('ethpricepercentages.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
