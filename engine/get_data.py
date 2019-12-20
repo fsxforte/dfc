@@ -58,6 +58,7 @@ def get_CDP_data():
 		}
 		nodes {
 		id
+		pip
 		ire
 		tab
 		lad

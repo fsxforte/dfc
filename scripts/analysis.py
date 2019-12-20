@@ -14,36 +14,51 @@ def make_correlations_matrix(input_matrix):
 	del corr_df.index.name
 	return corr_df
 
-#Get series of liquidation prices for CDPs
+#Get CDP data
 data = get_data.get_CDP_data()
 df = pd.DataFrame.from_dict(data['data']['allCups']['nodes'])
 df.set_index(df['id'], inplace=True)
 df['art'] = df['art'].astype(float)
 df['ink'] = df['ink'].astype(float)
 
-#Calculate liquidation price
-df['liquidation_price'] = df['art'].astype(float) * 1.5 / df['ink'].astype(float)
-#df[df['id']==147710]
+#Add a column for the price at which the CDP becomes liable to liquidation at 150% liquidation ratio
+df['liquidation_price'] = df['art'] * 1.5 / df['ink']
+
+#Add a column for the price at which the CDP becomes undercollateralized (less than 100%)
+df['underwater_price'] = df['art'] / df['ink']
 
 #Extract subset of liquidation prices
 #Subset constraints: (1) more than 5USD in DAI
 df = df[df['art']>5]
 
 sns.distplot(df['liquidation_price'])
+sns.distplot(df['underwater_price'])
 
 #Want to see how cumulative eth volume increases with liquidation price
 df.sort_values(by = 'liquidation_price', inplace=True, ascending = False)
-df['cumulative_eth']=df['ink'].cumsum()
 
-#Plot of the liquidation price
-df.plot(x = 'cumulative_eth', y = 'liquidation_price')
+#Extract current ETH price
+current_eth_price = float(df['pip'].iloc[0])
 
-def plot_liquidation_price_vol(df):
+def plot_liquidation_vols(df):
 	'''
 	Plot liquidation price vs. ETH quantity.
 	'''
+	#How much volume would be sold for different prices?
+	price_ethvol = {}
+	for perc_fall in range(101):
+		new_price = current_eth_price*(100-perc_fall)/100
+		###THE LINE BELOW IS WRONG - IN SOME CASES 113% of debt is more than the INK
+		df['eth_liability'] = 1.13 * df['art']/new_price
+		total_eth_liquidated = df['eth_liability'][df['liquidation_price']>new_price].sum()
+		price_ethvol[new_price] = total_eth_liquidated
+
+	df_liquidations = pd.DataFrame.from_dict(price_ethvol, orient = 'index', columns = {'eth_liquidated'})
+	df_liquidations['eth_price'] = df_liquidations.index
+	df_liquidations = df_liquidations[df_liquidations['eth_price']>0]
+
 	fig, ax = plt.subplots()
-	df.plot(x = 'cumulative_eth', y = 'liquidation_price', ax = ax)
+	df_liquidations.plot(x = 'eth_liquidated', y = 'eth_price', ax = ax)
 	ax.set_ylabel('ETH/USD price', fontsize = 16)
 	ax.set_xlabel('ETH quantity (cumulative)', fontsize = 16)
 	ax.tick_params(axis='both', which='major', labelsize=16)
@@ -51,21 +66,6 @@ def plot_liquidation_price_vol(df):
 	ax.get_legend().remove()
 	fig.savefig('pricevseth.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
-
-#What is the current ETH price? --> approx 130 USD as of 18 December 2019
-#Price drops
-ETH_vol_116 = df['ink'][df['liquidation_price']>116].sum()
-ETH_vol_120 = df['ink'][df['liquidation_price']>120].sum()
-ETH_vol_100 = df['ink'][df['liquidation_price']>100].sum()
-
-#How much volume would be sold for different prices?
-liquidations = {}
-for i in range(101):
-	bite_price = 130*(100-i)/100
-	eth_vol = df['ink'][df['liquidation_price']>bite_price].sum()
-	liquidations[i] = eth_vol
-
-df_liquidations = pd.DataFrame.from_dict(liquidations, orient = 'index')
 
 def plot_liquidation_price_drops(df_liquidations):
 	'''
@@ -79,3 +79,4 @@ def plot_liquidation_price_drops(df_liquidations):
 	plt.title('ETH vols and percentage price drops', fontsize = 16)
 	fig.savefig('ethpricepercentages.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
+
