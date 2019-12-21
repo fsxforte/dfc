@@ -4,9 +4,13 @@ from statsmodels.tsa.vector_ar.vecm import coint_johansen
 import datetime as dt
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 from engine import get_data
 import constants
+
+sns.set(style="darkgrid")
+
 
 #Extract current PETH/ETH ratio
 #ETH_PETH_RATIO = 
@@ -69,34 +73,38 @@ def plot_liquidations_for_price_drops(df, threshold: str):
 	ax.tick_params(axis='both', which='major', labelsize=16)
 	plt.title('Price vs. ETH volume for liquidation', fontsize = 16)
 	ax.get_legend().remove()
-	fig.savefig('pricevseth.png', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/pricevseth.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
-def plot_liquidations_for_perc_price_drops(df, threshold: str):
+def plot_liquidations_for_perc_price_drops(df):
 	'''
 	Plot correspondence between percentage changes in price and ETH volumes.
 	:df: input DataFrame
-	:threshold: 'liquidation_price' (150% collateral) or 'underwater_price' (100% collateral)
 	'''
 	#Extract current ETH price
 	CURRENT_ETH_PRICE = float(df['pip'].iloc[0])
+
 	perc_ethvol = {}
 	for perc_fall in range(101):
 		new_price = CURRENT_ETH_PRICE*(100-perc_fall)/100
-		df['eth_liability'] = 1.13 * df['art']/df[threshold]
-		total_eth_liquidated = df['eth_liability'][df[threshold]>new_price].sum()
-		perc_ethvol[perc_fall] = total_eth_liquidated
+		df['eth_liability'] = 1.13 * df['art']/df['liquidation_price']
+		total_eth_liquidated_below_150 = df['eth_liability'][df['liquidation_price']>new_price].sum()
+		perc_ethvol[perc_fall] = total_eth_liquidated_below_150
 
 	df_liquidations = pd.DataFrame.from_dict(perc_ethvol, orient = 'index', columns = {'eth_liquidated'})
-	df_liquidations['perc_fall'] = df_liquidations.index
+	df_liquidations['perc_fall'] = -1*(df_liquidations.index)
 
 	fig, ax = plt.subplots()
-	df_liquidations.plot(x = 'eth_liquidated', y = 'perc_fall', ax = ax)
-	ax.set_ylabel('Percentage fall in ETH/USD price', fontsize = 16)
-	ax.set_xlabel('ETH quantity (cumulative)', fontsize = 16)
-	ax.tick_params(axis='both', which='major', labelsize=16)
+	sns.lineplot(x = 'eth_liquidated', y = 'perc_fall', data = df_liquidations, ax = ax)
+	ax.set_ylabel('% change in ETH/USD price', fontsize = 14)
+	ax.set_xlabel('ETH quantity', fontsize = 14)
+	ax.tick_params(axis='both', which='major', labelsize=14)
 	plt.title('Impact of percentage fall in ETH price on liquidations', fontsize = 16)
-	ax.get_legend().remove()
-	fig.savefig('ethpricepercentages.png', bbox_inches = 'tight', dpi = 600)
+	plt.xticks(rotation=90)
+	ax.xaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+	fig.savefig('../5d8dd7887374be0001c94b71/images/percvseth.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
+
+	
+
 

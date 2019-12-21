@@ -1,0 +1,18 @@
+#1. Analysis of returns.
+# Want to know how resilient maker is to a recession
+# Can examine either actual crashes or 1% tail events (do this as from BofE)
+# So need to plot returns, KDE, find 0.1% scenario.
+#Output --> Negative ETH price shock of size x%
+
+#2. See how ETH liquidation vol varies with percentage price falls 
+# Size x% shock implies y vol of ETH liquidated over certain period
+# Moreover, question becomes: if a CDP triggered for liquidation at 150%, 
+# could the market become so illiquid that there isn't time to sell before 100%?
+    # Price falls below liquidation price - > liquidation triggered
+    # Q: how quickly could price fall 33% (150 to 100)? Look historically
+
+    # For a 1% fall in price, x CDPs liquidated
+    # probability of 5% price fall is p(5%)
+    # probability of subsequent 33% fall is p(33|5)
+    # Need a conditional volatlity model
+    # If you know the conditional probability of p(33|5), and you know the eth underwater, can work out VaR

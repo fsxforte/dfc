@@ -7,6 +7,7 @@ from datetime import datetime
 import time
 import os
 from urllib.parse import urljoin
+import constants
 
 from settings import API_KEY
 
@@ -108,7 +109,7 @@ def create_logrets_df():
 	#Build matrix of close prices for MCD tokens
 	logreturns_master = pd.DataFrame()
 	for token in constants.MCD_TOKENS:
-		token_df = create_df(from_sym = token, to_sym = 'USDT')
+		token_df = create_df(from_sym = token, to_sym = 'USD')
 		token_df.replace(0.0, np.nan, inplace=True)
 		rets = np.log(token_df['close']) - np.log(token_df['close'].shift(1))
 		rets = rets.rename(token)
