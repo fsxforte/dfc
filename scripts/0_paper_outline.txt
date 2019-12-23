@@ -16,3 +16,21 @@
     # probability of subsequent 33% fall is p(33|5)
     # Need a conditional volatlity model
     # If you know the conditional probability of p(33|5), and you know the eth underwater, can work out VaR
+
+
+Say you have a lot of CDPs being efficiently maintained at 150% + some delta margin
+What is the probability of a 33/% change in price of ETH, such that these CDPs would end up underwater?
+    -> This probability will depend on timeframe. 
+    --> Need plots of probability of a 33\% drop vs timeframe
+
+There may have been such 33% drops before, but the point is, as finance gets the margins down, then the impact of a price corection is much more direct
+So compare scenario (i), which is current situation, to scenario (ii), which is where all parties are trading at the limit (150%)
+Now, if there is a price crash of 33%, it's unlikely that it will happen within hours etc
+--> market participants would have a few hours in which to trade out of their ETH
+--> hos effectively they can do this will depend on the market liquidity. Show plots, hour by hour.
+---> crash precipitates when market isn't resilient enough / not enough liquidity to support the trading out of so much ETH
+
+Emphasis needs to be on the impact of levered positions. If everyone only levers up 1x, then what's the ETH vol?
+If everyone levers up 3x, what's the implied ETH vol then? (actually can see in CDPs)
+But what about compound, dydx - these have DAI in them. so more ETH affected...
+

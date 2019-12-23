@@ -45,41 +45,43 @@ def build_cdp_dataframe():
 
 	return df
 
-def plot_liquidations_for_price_drops(df, threshold: str):
-	'''
-	Plot liquidation price vs. ETH quantity.
-	:df: input DataFrame
-	:threshold: 'liquidation_price' (150% collateral) or 'underwater_price' (100% collateral)
-	'''
-	#Extract current ETH price
-	CURRENT_ETH_PRICE = float(df['pip'].iloc[0])
+# def plot_liquidations_for_price_drops(df, threshold: str):
+# 	'''
+# 	Plot liquidation price vs. ETH quantity.
+# 	:df: input DataFrame
+# 	:threshold: 'liquidation_price' (150% collateral) or 'underwater_price' (100% collateral)
+# 	'''
+# 	#Extract current ETH price
+# 	CURRENT_ETH_PRICE = float(df['pip'].iloc[0])
 
-	#How much volume would be sold for different prices?
-	price_ethvol = {}
-	for perc_fall in range(101):
-		new_price = CURRENT_ETH_PRICE*(100-perc_fall)/100
-		df['eth_liability'] = 1.13 * df['art']/df[threshold]
-		total_eth_liquidated = df['eth_liability'][df[threshold]>new_price].sum()
-		price_ethvol[new_price] = total_eth_liquidated
+# 	#How much volume would be sold for different prices?
+# 	price_ethvol = {}
+# 	for perc_fall in range(101):
+# 		new_price = CURRENT_ETH_PRICE*(100-perc_fall)/100
+# 		df['eth_liability'] = 1.13 * df['art']/df[threshold]
+# 		total_eth_liquidated = df['eth_liability'][df[threshold]>new_price].sum()
+# 		price_ethvol[new_price] = total_eth_liquidated
 
-	df_liquidations = pd.DataFrame.from_dict(price_ethvol, orient = 'index', columns = {'eth_liquidated'})
-	df_liquidations['eth_price'] = df_liquidations.index
-	df_liquidations = df_liquidations[df_liquidations['eth_price']>0]
+# 	df_liquidations = pd.DataFrame.from_dict(price_ethvol, orient = 'index', columns = {'eth_liquidated'})
+# 	df_liquidations['eth_price'] = df_liquidations.index
+# 	df_liquidations = df_liquidations[df_liquidations['eth_price']>0]
 
-	fig, ax = plt.subplots()
-	df_liquidations.plot(x = 'eth_liquidated', y = 'eth_price', ax = ax)
-	ax.set_ylabel('ETH/USD price', fontsize = 16)
-	ax.set_xlabel('ETH quantity (cumulative)', fontsize = 16)
-	ax.tick_params(axis='both', which='major', labelsize=16)
-	plt.title('Price vs. ETH volume for liquidation', fontsize = 16)
-	ax.get_legend().remove()
-	fig.savefig('../5d8dd7887374be0001c94b71/images/pricevseth.png', bbox_inches = 'tight', dpi = 600)
-	plt.show()
+# 	fig, ax = plt.subplots()
+# 	df_liquidations.plot(x = 'eth_liquidated', y = 'eth_price', ax = ax)
+# 	ax.set_ylabel('ETH/USD price', fontsize = 16)
+# 	ax.set_xlabel('ETH quantity (cumulative)', fontsize = 16)
+# 	ax.tick_params(axis='both', which='major', labelsize=16)
+# 	plt.title('Price vs. ETH volume for liquidation', fontsize = 16)
+# 	ax.get_legend().remove()
+# 	fig.savefig('../5d8dd7887374be0001c94b71/images/pricevseth.png', bbox_inches = 'tight', dpi = 600)
+# 	plt.show()
 
-def plot_liquidations_for_perc_price_drops(df):
+def plot_liquidations_for_perc_price_drops(df, threshold: str):
 	'''
 	Plot correspondence between percentage changes in price and ETH volumes.
 	:df: input DataFrame
+	:threshold: 'liquidation_price' - corresponding to price at which CDP liquidated as below 150%
+			    'underwater_price' - corresponding to price at which CDP less than 100% collateralized
 	'''
 	#Extract current ETH price
 	CURRENT_ETH_PRICE = float(df['pip'].iloc[0])
@@ -87,8 +89,8 @@ def plot_liquidations_for_perc_price_drops(df):
 	perc_ethvol = {}
 	for perc_fall in range(101):
 		new_price = CURRENT_ETH_PRICE*(100-perc_fall)/100
-		df['eth_liability'] = 1.13 * df['art']/df['liquidation_price']
-		total_eth_liquidated_below_150 = df['eth_liability'][df['liquidation_price']>new_price].sum()
+		df['eth_liability'] = 1.13 * df['art']/df[threshold]
+		total_eth_liquidated_below_150 = df['eth_liability'][df[threshold]>new_price].sum()
 		perc_ethvol[perc_fall] = total_eth_liquidated_below_150
 
 	df_liquidations = pd.DataFrame.from_dict(perc_ethvol, orient = 'index', columns = {'eth_liquidated'})
@@ -102,7 +104,10 @@ def plot_liquidations_for_perc_price_drops(df):
 	plt.title('Impact of percentage fall in ETH price on liquidations', fontsize = 16)
 	plt.xticks(rotation=90)
 	ax.xaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
-	fig.savefig('../5d8dd7887374be0001c94b71/images/percvseth.png', bbox_inches = 'tight', dpi = 600)
+	if threshold == 'liquidation_price':
+		fig.savefig('../5d8dd7887374be0001c94b71/images/percvseth_lp.png', bbox_inches = 'tight', dpi = 600)
+	if threshold == 'underwater_price':
+		fig.savefig('../5d8dd7887374be0001c94b71/images/percvseth_up.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
 	
