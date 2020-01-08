@@ -3,6 +3,8 @@ import datetime as dt
 import seaborn as sns
 from engine import liquidations
 from scripts import phase_one
+from scipy.stats import pearsonr
+
 
 sns.set(style="darkgrid")
 
@@ -72,3 +74,35 @@ total_eth_liquidated = df['eth_liability'][df['underwater_price']>new_price].sum
 #Look at historical volumes on the ETH DAI pair
 # Look at market depth in bps on the ETH/DAI pair
 #In both cases: see what the market coudl support
+
+######################################
+#3 Plot the amount of DAI that would be liquidated for an x% change in price, and the amount of DAI that would be underwater for an x% change in price
+######################################
+
+#0. Get CDP data
+df = liquidations.build_cdp_dataframe()
+
+#1. Examine the sensitivity of CDPs to percentage price drops
+liquidations.plot_liquidations_for_perc_price_drops_dai(df, threshold = 'underwater_price')
+
+######################################
+#4 Compute the historical correlation between ETH and MKR
+######################################
+
+TOKEN_BASKET = ['ETH', 'MKR']
+
+#Select subset for 2016 until now
+start_date = dt.datetime(2018,1,1)
+end_date = dt.datetime(2020,1,6)
+
+#Get the data
+df_eth = get_data.create_df(TOKEN_BASKET[0], 'USD')[start_date:end_date]
+df_mkr = get_data.create_df(TOKEN_BASKET[1], 'USD')[start_date:end_date]
+
+eth_prices = df_eth['close']
+mkr_prices = df_mkr['close']
+corr, _ = pearsonr(eth_prices, mkr_prices) # Value is 0.85
+
+
+
+

@@ -34,3 +34,4 @@ Emphasis needs to be on the impact of levered positions. If everyone only levers
 If everyone levers up 3x, what's the implied ETH vol then? (actually can see in CDPs)
 But what about compound, dydx - these have DAI in them. so more ETH affected...
 
+

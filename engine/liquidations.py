@@ -76,7 +76,7 @@ def build_cdp_dataframe():
 # 	fig.savefig('../5d8dd7887374be0001c94b71/images/pricevseth.png', bbox_inches = 'tight', dpi = 600)
 # 	plt.show()
 
-def plot_liquidations_for_perc_price_drops(df, threshold: str):
+def plot_liquidations_for_perc_price_drops_eth(df, threshold: str):
 	'''
 	Plot correspondence between percentage changes in price and ETH volumes.
 	:df: input DataFrame
@@ -90,8 +90,8 @@ def plot_liquidations_for_perc_price_drops(df, threshold: str):
 	for perc_fall in range(101):
 		new_price = CURRENT_ETH_PRICE*(100-perc_fall)/100
 		df['eth_liability'] = 1.13 * df['art']/df[threshold]
-		total_eth_liquidated_below_150 = df['eth_liability'][df[threshold]>new_price].sum()
-		perc_ethvol[perc_fall] = total_eth_liquidated_below_150
+		total_eth_liquidated = df['eth_liability'][df[threshold]>new_price].sum()
+		perc_ethvol[perc_fall] = total_eth_liquidated
 
 	df_liquidations = pd.DataFrame.from_dict(perc_ethvol, orient = 'index', columns = {'eth_liquidated'})
 	df_liquidations['perc_fall'] = -1*(df_liquidations.index)
@@ -110,6 +110,35 @@ def plot_liquidations_for_perc_price_drops(df, threshold: str):
 		fig.savefig('../5d8dd7887374be0001c94b71/images/percvseth_up.png', bbox_inches = 'tight', dpi = 600)
 	plt.show()
 
-	
+def plot_liquidations_for_perc_price_drops_dai(df, threshold: str):
+	'''
+	Plot correspondence between percentage changes in price and ETH volumes.
+	:df: input DataFrame
+	:threshold: 'liquidation_price' - corresponding to price at which CDP liquidated as below 150%
+			    'underwater_price' - corresponding to price at which CDP less than 100% collateralized
+	'''
+	#Extract current ETH price
+	CURRENT_ETH_PRICE = float(df['pip'].iloc[0])
 
+	perc_daivol = {}
+	for perc_fall in range(101):
+		new_price = CURRENT_ETH_PRICE*(100-perc_fall)/100
+		total_dai_liquidated = df['art'][df[threshold]>new_price].sum()
+		perc_daivol[perc_fall] = total_dai_liquidated
 
+	df_liquidations = pd.DataFrame.from_dict(perc_daivol, orient = 'index', columns = {'dai_liquidated'})
+	df_liquidations['perc_fall'] = -1*(df_liquidations.index)
+
+	fig, ax = plt.subplots()
+	sns.lineplot(x = 'dai_liquidated', y = 'perc_fall', data = df_liquidations, ax = ax)
+	ax.set_ylabel('% change in ETH/USD price', fontsize = 14)
+	ax.set_xlabel('DAI quantity', fontsize = 14)
+	ax.tick_params(axis='both', which='major', labelsize=14)
+	plt.title('Impact of percentage fall in ETH price on liquidations of DAI', fontsize = 16)
+	plt.xticks(rotation=90)
+	ax.xaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.0f}'))
+	if threshold == 'liquidation_price':
+		fig.savefig('../5d8dd7887374be0001c94b71/images/percvsdai_lp.png', bbox_inches = 'tight', dpi = 600)
+	if threshold == 'underwater_price':
+		fig.savefig('../5d8dd7887374be0001c94b71/images/percvsdai_up.png', bbox_inches = 'tight', dpi = 600)
+	plt.show()
