@@ -13,21 +13,40 @@ from engine import get_data
 
 sns.set(style="darkgrid")
 
+TOKEN_BASKET = ['ETH', 'MKR']
+
 #Select subset for 2016 until now
 start_date = dt.datetime(2016,1,1)
-end_date = dt.datetime(2019,12,20)
+end_date = dt.datetime(2020,1,6)
 
-#0. Get the data and plot the price
-eth_usd_df = get_data.create_df('ETH', 'USD')
-eth_usd_df = eth_usd_df[start_date:end_date]
-fig, ax = plt.subplots()
-sns.lineplot(x = eth_usd_df.index, y = 'close', data = eth_usd_df, ax = ax)
-ax.set_ylabel('ETH/USD price', fontsize = 14)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+
+#0. Get the data and plot the prices
+df = get_data.create_df(TOKEN_BASKET[0], 'USD')
+df = df[start_date:end_date]
+ax.plot(df.index, df['close'], label = 'ETH/USD', color = 'k')
+ax.set_ylabel(TOKEN_BASKET[0] + '/USD price', fontsize = 14)
 ax.tick_params(axis='both', which='major', labelsize=14)
-plt.title('ETH/USD close price', fontsize = 14)
 fig.autofmt_xdate()
-ax.set_xlabel('')
-fig.savefig('../5d8dd7887374be0001c94b71/images/eth_usd_close_price.png', bbox_inches = 'tight', dpi = 600)
+ax1.set_xlabel('')
+
+df = get_data.create_df(TOKEN_BASKET[1], 'USD')
+start_date = dt.datetime(2018,1,1)
+df = df[start_date:end_date]
+ax2 = ax.twinx()
+ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r')
+ax2.set_ylabel(TOKEN_BASKET[1] + '/USD price', fontsize = 14)
+ax2.tick_params(axis='both', which='major', labelsize=14)
+fig.autofmt_xdate()
+ax2.set_xlabel('')
+
+lines, labels = ax.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax2.legend(lines + lines2, labels + labels2, loc=0)
+
+plt.title('ETH/USD and MKR/USD close prices', fontsize = 14)
+fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.png', bbox_inches = 'tight', dpi = 600)
 
 
 #1. Plot the returns
