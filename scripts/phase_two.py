@@ -9,8 +9,6 @@ from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.tsa.api import VAR
 import statsmodels.api as sm
 
-
-
 sns.set(style="darkgrid")
 
 ######################################
@@ -156,10 +154,11 @@ results.forecast(df.values[-lag_order:], 5)
 results.plot_forecast(10)
 
 #Plot IRFs
-irf = results.irf(100)
+irf = results.irf(20)
 irf.plot(orth=False)
 
-irf.plot_cum_effects(orth=False)
+fig = irf.plot_cum_effects(orth=False)
+fig.savefig('../5d8dd7887374be0001c94b71/images/irfs_cumulative.png', bbox_inches = 'tight', dpi = 600)
 
 #Feed this into the simulator
 
