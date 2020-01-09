@@ -4,6 +4,11 @@ import seaborn as sns
 from engine import liquidations
 from scripts import phase_one
 from scipy.stats import pearsonr
+import pandas as pd
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.api import VAR
+import statsmodels.api as sm
+
 
 
 sns.set(style="darkgrid")
@@ -103,6 +108,58 @@ eth_prices = df_eth['close']
 mkr_prices = df_mkr['close']
 corr, _ = pearsonr(eth_prices, mkr_prices) # Value is 0.85
 
+######################################
+#5 Look at the impact of price changes in ETH on the MKR market cap
+######################################
 
+#Import and clean MKR token market cap data
+df_mkr_mktcap = pd.read_csv('MKR_token.csv')
+df_mkr_mktcap['new_date']=pd.to_datetime(df_mkr_mktcap['Date'])
+df_mkr_mktcap.sort_values(by = 'new_date')
+df_mkr_mktcap.set_index('new_date', inplace = True)
+df_mkr_mktcap = df_mkr_mktcap['Market Cap']
+df_mkr_mktcap = df_mkr_mktcap.str.replace(',', '').astype(float)
 
+#Merge together on same DataFrame
+df = pd.concat([df_eth, df_mkr_mktcap], axis = 1)
+df = df[['close', 'Market Cap']].dropna()
+
+#Inspect levels for stationarity (needed for VAR model)
+fig = plot_acf(df['Market Cap']) # Highly correlated
+fig.savefig('../5d8dd7887374be0001c94b71/images/acf_eth_close.png', bbox_inches = 'tight', dpi = 600)
+
+fig = plot_acf(df['close']) # Highly correlated
+fig.savefig('../5d8dd7887374be0001c94b71/images/acf_mkr_cap.png', bbox_inches = 'tight', dpi = 600)
+
+#Inspect differences for stationarity (needed for VAR model)
+fig = plot_acf(df['close'].diff().dropna()) # Does better, though not perfect
+fig.savefig('../5d8dd7887374be0001c94b71/images/acf_eth_close_diff.png', bbox_inches = 'tight', dpi = 600)
+
+fig = plot_acf(df['Market Cap'].diff().dropna()) # Does better, though not perfect
+fig.savefig('../5d8dd7887374be0001c94b71/images/acf_mkr_cap_diff.png', bbox_inches = 'tight', dpi = 600)
+
+#So create dataframe in differences
+
+df_diff = df.diff().dropna()
+
+#Fit VAR model
+model = VAR(df_diff)
+results = model.fit(maxlags=15, ic='aic')
+results.summary()
+results.plot()
+results.plot_acorr()
+
+#Forecasting
+lag_order = results.k_ar
+results.forecast(df.values[-lag_order:], 5)
+
+results.plot_forecast(10)
+
+#Plot IRFs
+irf = results.irf(100)
+irf.plot(orth=False)
+
+irf.plot_cum_effects(orth=False)
+
+#Feed this into the simulator
 
