@@ -44,7 +44,6 @@ def multivariate_monte_carlo(historical_prices, num_simulations, num_periods_ahe
 
 	#Time index for predicted periods
 	t = np.arange(1, int(num_periods_ahead) + 1)
-	M = [t for i in range(len(S0))] 
 
 	#Generate uncorrelated random sequences
 	b = {str(simulation): np.random.normal(0, 1, (len(S0), num_periods_ahead)) for simulation in range(1, num_simulations + 1)}
@@ -66,7 +65,6 @@ def multivariate_monte_carlo(historical_prices, num_simulations, num_periods_ahe
 		drift[str(simulation)] = [(mu - 0.5 * sigma**2)[asset]*t for asset in range(len(S0))]
 
 	#Diffusion
-	#diffusion = {str(simulation): sigma * W[str(simulation)] for simulation in range(1, num_simulations + 1)}
 	diffusion = {}
 	for simulation in range(1, num_simulations + 1):
 		diffusion[str(simulation)] = [sigma[asset] * W[str(simulation)][asset] for asset in range(len(S0))]
@@ -75,6 +73,7 @@ def multivariate_monte_carlo(historical_prices, num_simulations, num_periods_ahe
 	simulations = {}
 	for simulation in range(1, num_simulations + 1):
 		simulations[str(simulation)] = [np.append(S0[asset], S0[asset] * np.exp(drift[str(simulation)][asset] + diffusion[str(simulation)][asset])) for asset in range(len(S0))]
+		#simulations[str(simulation)] = [np.append(S0[asset], S0[asset] * np.exp(diffusion[str(simulation)][asset])) for asset in range(len(S0))]
 
 	return simulations
 
