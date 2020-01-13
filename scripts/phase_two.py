@@ -1,4 +1,3 @@
-from engine import get_data
 import datetime as dt
 import seaborn as sns
 from engine import liquidations
@@ -8,6 +7,9 @@ import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.tsa.api import VAR
 import statsmodels.api as sm
+
+from engine import get_data
+
 
 sns.set(style="darkgrid")
 
