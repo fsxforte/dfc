@@ -63,17 +63,17 @@ for simulation in range(1, num_simulations + 1):
 
 #Calculate implied ETH vol to be liquidated for these price changes
 #Assuming CDPs are on cusp of liquidation at 150% by arbitrage
-eth_vols = {}
+sims = {}
 DAI_DEBT = 300000000
 PERC_FEE = 1 # e.g. could be 1.13
-MAX_ETH_SELLABLE_IN_24HOURS = 10
+MAX_ETH_SELLABLE_IN_24HOURS = 100
+
 for simulation in range(1, num_simulations + 1):
     sim_version = simulations[str(simulation)]
     new_sim_version = []
     for asset_array in sim_version:
         new_asset_array_margin = []
-        new_asset_array_dai = []
-        audit = []
+        dai_liability = []
         for index, price in enumerate(asset_array):
 
             if index == 0:
@@ -83,34 +83,32 @@ for simulation in range(1, num_simulations + 1):
                 unliquidated_eth = eth_equivalent - MAX_ETH_SELLABLE_IN_24HOURS
                 unliquidated_eth_usd = unliquidated_eth * asset_array[index + 1]
                 residual_dai = DAI_DEBT - unliquidated_eth_usd
-                new_asset_array_dai.append(residual_dai)
-                output = ('avg_eth_price: ' + str(avg_eth_price), 'ETH: ' + str(eth_equivalent), 'Unliquidated ETH: ' + str(unliquidated_eth), 'unliquidated_eth_usd: ' + str(unliquidated_eth_usd), 'residual_dai: '+ str(residual_dai))
-                audit.append(output)
+                dai_liability.append(residual_dai)
 
-                #Safety margin
+                #MARGIN
                 safety_margin = unliquidated_eth_usd - residual_dai
                 new_asset_array_margin.append(safety_margin)
                 
             if (index < num_periods - 1) & (index > 0):
-                dai_balance_outstanding = new_asset_array_dai[index - 1]
+                dai_balance_outstanding = dai_liability[index - 1]
                 avg_eth_price = (asset_array[index] + asset_array[index + 1]) / 2
-                eth_equivalent = dai_balance_outstanding / avg_eth_price
-                unliquidated_eth = eth_equivalent - MAX_ETH_SELLABLE_IN_24HOURS
-                unliquidated_eth_usd = unliquidated_eth * asset_array[index + 1]
-                residual_dai = dai_balance_outstanding - unliquidated_eth_usd
-                new_asset_array_dai.append(residual_dai)
-                output = ('avg_eth_price: ' + str(avg_eth_price), 'ETH: ' + str(eth_equivalent), 'Unliquidated ETH: ' + str(unliquidated_eth), 'unliquidated_eth_usd: ' + str(unliquidated_eth_usd), 'residual_dai: '+ str(residual_dai), 'dai outstanding: ' + str(dai_balance_outstanding))
-                audit.append(output)
-
-                #Safety margin
+                max_eth_liquidation_usd = MAX_ETH_SELLABLE_IN_24HOURS * avg_eth_price
+                if dai_balance_outstanding > max_eth_liquidation_usd:                    
+                    residual_dai = dai_balance_outstanding - max_eth_liquidation_usd
+                    dai_liability.append(residual_dai)
+                else:
+                    residual_dai = 0
+                    dai_liability.append(residual_dai)
+                
+                #MARGIN
                 safety_margin = unliquidated_eth_usd - residual_dai
                 new_asset_array_margin.append(safety_margin)
 
-        new_sim_version.append(audit)
+        new_sim_version.append(dai_liability)
 
-    eth_vols[str(simulation)] = new_sim_version
+    sims[str(simulation)] = new_sim_version
 
-eth_vols['1'][0]
+sims['1'][0]
 
 #Extract just the arrays corresponding to the ETH asset
 # sims_eth_liquidated = monte_carlo.asset_extractor_from_sims(eth_vols, 0)
