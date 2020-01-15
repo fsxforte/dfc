@@ -64,15 +64,15 @@ for simulation in range(1, num_simulations + 1):
 #Calculate implied ETH vol to be liquidated for these price changes
 #Assuming CDPs are on cusp of liquidation at 150% by arbitrage
 
-DAI_DEBT = 30000000
-MAX_ETH_SELLABLE_IN_24HOURS = 1000
+DAI_DEBT = 300000000000
+MAX_ETH_SELLABLE_IN_24HOURS = 1000000
 COLLATERALIZATION_RATIO = 1.5
+QUANTITY_RESERVE_ASSET = 1000000
 
-sims = monte_carlo.crash_simulator(simulations = simulations, DAI_DEBT = DAI_DEBT, MAX_ETH_SELLABLE_IN_24HOURS = MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO)
+sims = monte_carlo.crash_simulator(simulations = simulations, DAI_DEBT = DAI_DEBT, MAX_ETH_SELLABLE_IN_24HOURS = MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET)
 
-sims_eth = monte_carlo.asset_extractor_from_sims(sims, 0)
-df_eth = pd.DataFrame(sims_eth)
-df_eth.plot()
+df_margin = pd.DataFrame(sims)
+worst_cases = df_margin.loc[:, worst_eth_outcomes]
+worst_cases.plot()
 
-worst_eth = df_eth.loc[:, worst_eth_outcomes]
-worst_eth.plot()
+#At the point where you need to play around with parameter values. Can you plot this 3D somehow and show how all the parameters interact?
