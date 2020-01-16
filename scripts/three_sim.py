@@ -4,6 +4,8 @@ import pandas as pd
 import seaborn as sns
 from mpl_toolkits import mplot3d
 from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 
 sns.set(style="darkgrid")
@@ -58,23 +60,23 @@ simulations = monte_carlo.multivariate_monte_carlo(prices, NUM_SIMULATIONS, DAYS
 # df = pd.DataFrame(sims)
 # df.plot()
 
-#Plot for a simulation
-df_sim = pd.DataFrame(simulations['1000']).transpose()
-df_sim = df_sim/df_sim.loc[0]
-df_sim.plot()
+# #Plot for a simulation
+# df_sim = pd.DataFrame(simulations['1000']).transpose()
+# df_sim = df_sim/df_sim.loc[0]
+# df_sim.plot()
 
-#Of the simulations, find the worst 1%
+#Of the simulations, find the worst 1
 sims_eth = monte_carlo.asset_extractor_from_sims(simulations, 0)
-df_eth = pd.DataFrame(sims)
-worst_eth_outcomes = df_eth.iloc[-1].nsmallest(10).index
+df_eth = pd.DataFrame(sims_eth)
+worst_eth_outcomes = df_eth.iloc[-1].nsmallest(1).index
 worst_eth = df_eth.loc[:, worst_eth_outcomes]
 worst_eth.plot()
 
-#Find corresponding bad MKR outcomes
-sims_mkr = monte_carlo.asset_extractor_from_sims(simulations, 1)
-df_mkr = pd.DataFrame(sims_mkr)
-corresponding_mkr_sims = df_mkr.loc[:, worst_eth_outcomes]
-corresponding_mkr_sims.plot()
+# #Find corresponding bad MKR outcomes
+# sims_mkr = monte_carlo.asset_extractor_from_sims(simulations, 1)
+# df_mkr = pd.DataFrame(sims_mkr)
+# corresponding_mkr_sims = df_mkr.loc[:, worst_eth_outcomes]
+# corresponding_mkr_sims.plot()
 
 #################################################################
 ################       SIMULATION              ##################
@@ -94,3 +96,51 @@ worst_cases.plot()
 #################################################################
 #########      EXPLORE THE MARGIN SPACE #########################
 #################################################################
+
+#Remember that each monte carlo will yield different results unless same seed used
+
+#Set up the X axis
+#About 30,000,000 at present, so a range around this
+dai_debts = []
+for i in range(10000000, 60000000, 1000000):
+    dai_debts.append(i)
+
+#Set up the Y axis
+max_eth_sellable = []
+#80,000,000 seems about right, looking at current data. So range around this.
+for i in range(50000000, 100000000, 1000000):
+    max_eth_sellable.append(i)
+
+#Make skeleton dataframe to fill
+df_3d = pd.DataFrame(index = dai_debts, columns = max_eth_sellable)
+
+#Compute the margins at a certain number of days for these parameters (need a scalar)
+#Run multivariate monte carlo using selected input parameters
+price_simulations = monte_carlo.multivariate_monte_carlo(prices, NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT)
+
+for i in dai_debts:
+    for j in max_eth_sellable:
+        #Run the system simulator
+        system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = i, MAX_ETH_SELLABLE_IN_24HOURS = j, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET)
+
+        df = pd.DataFrame(system_simulations)
+        worst_case = df.loc[:, worst_eth_outcomes]
+        margin_on_day = worst_case.loc[30][0]
+
+        df_3d.at[i, j] = margin_on_day
+
+df_unstacked=df_3d.unstack().reset_index()
+df_unstacked.columns=["eth_sellable","dai_debt","margin"]
+df_unstacked = df_unstacked.astype('int')
+
+# Make the plot
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.viridis, linewidth=0.2)
+ 
+# to Add a color bar which maps values to colors.
+surf=ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.viridis, linewidth=0.2)
+fig.colorbar( surf, shrink=0.5, aspect=5)
+ 
+# Other palette
+ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.jet_r, linewidth=0.01)
