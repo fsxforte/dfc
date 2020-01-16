@@ -9,14 +9,17 @@ import matplotlib.mlab as mlab
 from engine import get_data
 from engine import kernel_estimation
 
-def multivariate_monte_carlo(historical_prices, num_simulations, num_periods_ahead):
+def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
 	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
 	:historical_prices: dataframe where columns are assets and rows are time
 	:num_simulations: number of runs of simulation to perform. 
-	:predicted_periods: number of periods to predict into the future. 
+	:T: length of time prediction horizon (in units of dt, i.e. days)
+	:dt: time increment, i.e. frequency of data (using daily data here)
 	'''
+	
+	num_periods_ahead = int(T / dt)
 
 	#From prices, calculate log returns
 	log_returns = np.log(historical_prices) - np.log(historical_prices.shift(1))
@@ -29,15 +32,18 @@ def multivariate_monte_carlo(historical_prices, num_simulations, num_periods_ahe
 
 	#Mean log return
 	mu = np.mean(log_returns)
+	print('mu: ' + str(mu))
 
 	#Standard deviation of log return
 	sigma = np.std(log_returns)
+	print('sigma: ' + str(sigma))
 	#Diagonal sigmas
-	sd = np.diag(sigma)
+	#sd = np.diag(sigma)
 
 	#Compute covariance matrix from historical prices
 	corr_matrix = log_returns.corr()
-	cov_matrix = np.dot(sd, np.dot(corr_matrix, sd))
+	cov_matrix = log_returns.cov()
+	#cov_matrix = np.dot(sd, np.dot(corr_matrix, sd))
 
 	#Cholesky decomposition
 	Chol = np.linalg.cholesky(cov_matrix) 
