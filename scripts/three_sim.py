@@ -40,14 +40,14 @@ QUANTITY_RESERVE_ASSET = 1000000 # About the right amount of MKR Reserve asset a
 #Get the data
 df_eth = get_data.create_df(TOKEN_BASKET[0], 'USD')[start_date:end_date]
 df_mkr = get_data.create_df(TOKEN_BASKET[1], 'USD')[start_date:end_date]
-df_bat = get_data.create_df(TOKEN_BASKET[2], 'USD')[start_date:end_date]
+#df_bat = get_data.create_df(TOKEN_BASKET[2], 'USD')[start_date:end_date]
 eth_prices = df_eth['close']
 eth_prices.rename('ETH', inplace=True)
 mkr_prices = df_mkr['close']
 mkr_prices.rename('MKR', inplace=True)
-bat_prices = df_bat['close']
-bat_prices.rename('BAT', inplace=True)
-prices = pd.concat([eth_prices, mkr_prices, bat_prices], axis = 1)
+#bat_prices = df_bat['close']
+#bat_prices.rename('BAT', inplace=True)
+prices = pd.concat([eth_prices, mkr_prices], axis = 1)
 
 ###############################################################
 ###########      EXPLORATORY PLOTS                    #########
@@ -107,7 +107,7 @@ for i in range(100000000000, 600000000000, 100000000000):
 
 #Set up the Y axis
 max_eth_sellable = []
-#80,000,000 seems about right, looking at current data. So range around this.
+#3,000,000 seems about right, looking at current data. So range around this.
 for i in range(0, 50000000, 10000000):
     max_eth_sellable.append(i)
 
@@ -142,15 +142,9 @@ def plotter(day):
     # Make the plot
     fig = plt.figure(figsize=(12,8))
     ax = fig.gca(projection='3d')
-
     surf=ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.terrain_r, linewidth=0.2)
     fig.colorbar(surf, shrink=0.5, aspect=5)
-
     ax.view_init(elev = 30, azim = 220)
-
-    # Other palette
-    #ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.jet_r, linewidth=0.01)
-
     ax.set_xlabel('\n' + 'MAX ETH SELLABLE')
     ax.set_ylabel('\n' + 'DAI DEBT')
     ax.set_zlabel('\n' + 'TOTAL MARGIN')
@@ -159,3 +153,5 @@ def plotter(day):
 
 for day in range(100):
     plotter(day)
+
+plotter(40)
