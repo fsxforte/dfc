@@ -9,6 +9,8 @@ import matplotlib.mlab as mlab
 from engine import get_data
 from engine import kernel_estimation
 
+np.random.seed(137)
+
 def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).

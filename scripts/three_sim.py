@@ -19,7 +19,7 @@ from engine import monte_carlo
 ##############################################################
 
 #CONSTANTS
-TOKEN_BASKET = ['ETH', 'MKR', 'BAT']
+TOKEN_BASKET = ['ETH', 'MKR'] # Can have n tokens in here
 NUM_SIMULATIONS = 1000
 DAYS_AHEAD = 100
 TIME_INCREMENT = 1 # Frequency of data 
@@ -29,9 +29,9 @@ start_date = dt.datetime(2018,1,13)
 end_date = dt.datetime(2018,4,7)
 
 DAI_DEBT = 300000000000
-MAX_ETH_SELLABLE_IN_24HOURS = 100000
+MAX_ETH_SELLABLE_IN_24HOURS = 3447737 # Over period 13 Jan 2018 to 7 April 2018, avg vol
 COLLATERALIZATION_RATIO = 1.5
-QUANTITY_RESERVE_ASSET = 1000000
+QUANTITY_RESERVE_ASSET = 1000000 # About the right amount of MKR Reserve asset at the moment
 
 ###############################################################
 #############           GET INPUT DATA                #########
@@ -102,13 +102,13 @@ worst_cases.plot()
 #Set up the X axis
 #About 30,000,000 at present, so a range around this
 dai_debts = []
-for i in range(10000000, 60000000, 1000000):
+for i in range(100000000000, 600000000000, 100000000000):
     dai_debts.append(i)
 
 #Set up the Y axis
 max_eth_sellable = []
 #80,000,000 seems about right, looking at current data. So range around this.
-for i in range(50000000, 100000000, 1000000):
+for i in range(0, 50000000, 10000000):
     max_eth_sellable.append(i)
 
 #Make skeleton dataframe to fill
@@ -118,29 +118,44 @@ df_3d = pd.DataFrame(index = dai_debts, columns = max_eth_sellable)
 #Run multivariate monte carlo using selected input parameters
 price_simulations = monte_carlo.multivariate_monte_carlo(prices, NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT)
 
-for i in dai_debts:
-    for j in max_eth_sellable:
-        #Run the system simulator
-        system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = i, MAX_ETH_SELLABLE_IN_24HOURS = j, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET)
+#Of the simulations, find the worst 1
+sims_eth = monte_carlo.asset_extractor_from_sims(price_simulations, 0)
+df_eth = pd.DataFrame(sims_eth)
+worst_eth_outcomes = df_eth.iloc[-1].nsmallest(1).index
 
-        df = pd.DataFrame(system_simulations)
-        worst_case = df.loc[:, worst_eth_outcomes]
-        margin_on_day = worst_case.loc[30][0]
+def plotter(day):
+    for i in dai_debts:
+        for j in max_eth_sellable:
+            #Run the system simulator
+            system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = i, MAX_ETH_SELLABLE_IN_24HOURS = j, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET)
 
-        df_3d.at[i, j] = margin_on_day
+            df = pd.DataFrame(system_simulations)
+            worst_case = df.loc[:, worst_eth_outcomes]
+            margin_on_day = worst_case.loc[day][0]
 
-df_unstacked=df_3d.unstack().reset_index()
-df_unstacked.columns=["eth_sellable","dai_debt","margin"]
-df_unstacked = df_unstacked.astype('int')
+            df_3d.at[i, j] = margin_on_day
 
-# Make the plot
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.viridis, linewidth=0.2)
- 
-# to Add a color bar which maps values to colors.
-surf=ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.viridis, linewidth=0.2)
-fig.colorbar( surf, shrink=0.5, aspect=5)
- 
-# Other palette
-ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.jet_r, linewidth=0.01)
+    df_unstacked=df_3d.unstack().reset_index()
+    df_unstacked.columns=["eth_sellable","dai_debt","margin"]
+    df_unstacked = df_unstacked.astype('int')
+
+    # Make the plot
+    fig = plt.figure(figsize=(12,8))
+    ax = fig.gca(projection='3d')
+
+    surf=ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.terrain_r, linewidth=0.2)
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+
+    ax.view_init(elev = 30, azim = 220)
+
+    # Other palette
+    #ax.plot_trisurf(df_unstacked['eth_sellable'], df_unstacked['dai_debt'], df_unstacked['margin'], cmap=plt.cm.jet_r, linewidth=0.01)
+
+    ax.set_xlabel('\n' + 'MAX ETH SELLABLE')
+    ax.set_ylabel('\n' + 'DAI DEBT')
+    ax.set_zlabel('\n' + 'TOTAL MARGIN')
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    plt.show()
+
+for day in range(100):
+    plotter(day)
