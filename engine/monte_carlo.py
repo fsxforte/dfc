@@ -99,13 +99,13 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	
 	return asset_sims
 
-def crash_simulator(simulations, DAI_DEBT, MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET):
+def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:param_of_interest: whether to return margins, dai_liabilities or eth_collateral in the output
 	:simulations: monte carlo simulations of correlated price movements
 	:DAI_DEBT: amount of system DAI DEBT
-	:MAX_ETH_SELLABLE_IN_24_HOURS: maximum liquidity supportable by market
+	:INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS: maximum liquidity supportable by market at start of crash, decays exponentially
 	:COLLATERALIZATION_RATIO: system collateralization ratio
     '''
 	sims = {}
@@ -116,50 +116,62 @@ def crash_simulator(simulations, DAI_DEBT, MAX_ETH_SELLABLE_IN_24HOURS, COLLATER
 		dai_liability = []
 		eth_collateral = []
 		for index, price in enumerate(eth_sim_version):
+			print(index)
 
 			if index == 0:
 
 				#Set the initial base case from the first price where a sell off of all DAI_DEBT is triggered
-				dai_balance_outstanding = DAI_DEBT
-				avg_eth_price = (eth_sim_version[index] + eth_sim_version[index + 1]) / 2
+				dai_balance_outstanding = DAI_DEBT #USD
+				avg_eth_price = (eth_sim_version[index] + eth_sim_version[index + 1]) / 2 # ETH/USD
 
-				#Calculate amount of ETH needed to be at 150% collateralization
-				starting_eth_collateral = DAI_DEBT * COLLATERALIZATION_RATIO / eth_sim_version[index]
-				max_eth_liquidation_usd = MAX_ETH_SELLABLE_IN_24HOURS * avg_eth_price
+				#Calculate the ETH holdings corresponding to the assumption of exactly 150% collateralization at the start
+				starting_eth_collateral = DAI_DEBT * COLLATERALIZATION_RATIO / eth_sim_version[index] #ETH
+				
+				#Calculate the maximum ETH/USD value that can be liquidated
+				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
+				print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
 
-				if dai_balance_outstanding > max_eth_liquidation_usd:
-					#Assets
-					remaining_collateral = starting_eth_collateral - MAX_ETH_SELLABLE_IN_24HOURS
+				#If the total DAI debt exceeds the amount that can be liquidated in a single day
+				if dai_balance_outstanding > max_daily_eth_liquidation_usd:
+					#Assets (i.e. ETH collateral)
+					remaining_collateral = starting_eth_collateral - INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
 					eth_collateral.append(remaining_collateral)
-					#Liabilities                    
-					residual_dai = dai_balance_outstanding - max_eth_liquidation_usd
-					dai_liability.append(residual_dai)                    
+					#Liabilities (i.e. DAI debt still owed)                    
+					residual_dai = dai_balance_outstanding - max_daily_eth_liquidation_usd
+					dai_liability.append(residual_dai)
+
+				#Else if it so happens in 24 hours enough ETH can be sold to cover the total DAI debt                    
 				else:
 					#Assets
-					remaining_collateral = starting_eth_collateral - dai_balance_outstanding/avg_eth_price
+					remaining_collateral = starting_eth_collateral - dai_balance_outstanding/avg_eth_price #ETH
 					eth_collateral.append(remaining_collateral)
 					#Liabilities
-					residual_dai = 0
+					residual_dai = 0 #USD
 					dai_liability.append(residual_dai)
 
 				#MARGIN
-				eth_margin = remaining_collateral * eth_sim_version[index + 1] - residual_dai
-				mkr_margin = QUANTITY_RESERVE_ASSET * mkr_sim_version[index + 1]
-				total_margin = eth_margin + mkr_margin
+				print('Residual DAI: ' + str(residual_dai))
+				eth_margin = remaining_collateral * eth_sim_version[index + 1]  #USD
+				print('ETH margin: ' + str(eth_margin))
+				mkr_margin = QUANTITY_RESERVE_ASSET * mkr_sim_version[index + 1] #USD
+				print('MKR margin: ' + str(mkr_margin))
+				total_margin = eth_margin + mkr_margin - residual_dai #USD
+				print('Total margin: ' + str(total_margin))
 				total_margins.append(total_margin)
 				
 			if (index < len(eth_sim_version) - 1) & (index > 0):
 				#DAI liabilities
-				dai_balance_outstanding = dai_liability[index - 1]
+				dai_balance_outstanding = dai_liability[index - 1] # USD
 				avg_eth_price = (eth_sim_version[index] + eth_sim_version[index + 1]) / 2
-				max_eth_liquidation_usd = MAX_ETH_SELLABLE_IN_24HOURS * avg_eth_price
+				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
+				print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
 
-				if dai_balance_outstanding > max_eth_liquidation_usd:
+				if dai_balance_outstanding > max_daily_eth_liquidation_usd:
 					#Assets
-					remaining_collateral = eth_collateral[index - 1] - MAX_ETH_SELLABLE_IN_24HOURS
+					remaining_collateral = eth_collateral[index - 1] - INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
 					eth_collateral.append(remaining_collateral)
 					#Liabilities
-					residual_dai = dai_balance_outstanding - max_eth_liquidation_usd
+					residual_dai = dai_balance_outstanding - max_daily_eth_liquidation_usd # USD
 					dai_liability.append(residual_dai)
 				else:
 					#Assets
@@ -170,9 +182,13 @@ def crash_simulator(simulations, DAI_DEBT, MAX_ETH_SELLABLE_IN_24HOURS, COLLATER
 					dai_liability.append(residual_dai)
 				
 				#MARGIN
-				eth_margin = remaining_collateral * eth_sim_version[index + 1] - residual_dai
-				mkr_margin = QUANTITY_RESERVE_ASSET * mkr_sim_version[index + 1]
-				total_margin = eth_margin + mkr_margin
+				print('Residual DAI: ' + str(residual_dai))
+				eth_margin = remaining_collateral * eth_sim_version[index + 1] #USD
+				print('ETH margin: ' + str(eth_margin))
+				mkr_margin = QUANTITY_RESERVE_ASSET * mkr_sim_version[index + 1] #USD
+				print('MKR margin: ' + str(mkr_margin))
+				total_margin = eth_margin + mkr_margin - residual_dai
+				print('Total margin: ' + str(total_margin))
 				total_margins.append(total_margin)
 		
 		sims[str(simulation)] = total_margins
