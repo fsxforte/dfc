@@ -9,8 +9,6 @@ import matplotlib.mlab as mlab
 from engine import get_data
 from engine import kernel_estimation
 
-np.random.seed(137)
-
 def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
@@ -20,7 +18,9 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	:T: length of time prediction horizon (in units of dt, i.e. days)
 	:dt: time increment, i.e. frequency of data (using daily data here)
 	'''
-	
+	#Set seed to ensure same simulation run
+	np.random.seed(137)
+
 	num_periods_ahead = int(T / dt)
 
 	#From prices, calculate log returns
@@ -45,6 +45,7 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	#Compute covariance matrix from historical prices
 	corr_matrix = log_returns.corr()
 	cov_matrix = log_returns.cov()
+	print(corr_matrix)
 	#cov_matrix = np.dot(sd, np.dot(corr_matrix, sd))
 
 	#Cholesky decomposition

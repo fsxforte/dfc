@@ -15,9 +15,9 @@ sns.set(style="darkgrid")
 
 TOKEN_BASKET = ['ETH', 'MKR']
 
-#Select subset for 2016 until now
-start_date = dt.datetime(2016,1,1)
-end_date = dt.datetime(2020,1,6)
+#Select subset for 2018 until now
+start_date = dt.datetime(2018,1,1) # First data for MKE token
+end_date = dt.datetime(2020,1,20)
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -29,7 +29,7 @@ ax.plot(df.index, df['close'], label = 'ETH/USD', color = 'k')
 ax.set_ylabel(TOKEN_BASKET[0] + '/USD price', fontsize = 14)
 ax.tick_params(axis='both', which='major', labelsize=14)
 fig.autofmt_xdate()
-ax1.set_xlabel('')
+ax.set_xlabel('')
 
 df = get_data.create_df(TOKEN_BASKET[1], 'USD')
 start_date = dt.datetime(2018,1,1)

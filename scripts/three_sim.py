@@ -21,12 +21,12 @@ from engine import monte_carlo
 #CONSTANTS
 TOKEN_BASKET = ['ETH', 'MKR'] # Can have n tokens in here
 NUM_SIMULATIONS = 1000
-DAYS_AHEAD = 100
+DAYS_AHEAD = 50
 TIME_INCREMENT = 1 # Frequency of data 
 
 #Select subset for 2018 until now
-start_date = dt.datetime(2018,1,13)
-end_date = dt.datetime(2018,4,7)
+start_date = dt.datetime(2018,1,1)
+end_date = dt.datetime(2020,1,20)
 
 DAI_DEBT = 300000000000
 MAX_ETH_SELLABLE_IN_24HOURS = 3447737 # Over period 13 Jan 2018 to 7 April 2018, avg vol
@@ -55,28 +55,57 @@ prices = pd.concat([eth_prices, mkr_prices], axis = 1)
 
 simulations = monte_carlo.multivariate_monte_carlo(prices, NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT)
 
-# #Plot for a particular asset
-# sims = monte_carlo.asset_extractor_from_sims(simulations, 0)
-# df = pd.DataFrame(sims)
-# df.plot()
+###Plots of price paths
 
-# #Plot for a simulation
-# df_sim = pd.DataFrame(simulations['1000']).transpose()
-# df_sim = df_sim/df_sim.loc[0]
-# df_sim.plot()
+##ETH
+sims = monte_carlo.asset_extractor_from_sims(simulations, 0)
+df = pd.DataFrame(sims)
+fig, ax = plt.subplots()
+df.plot(ax=ax)
+ax.set_ylabel('ETH/USD', fontsize = 14)
+ax.tick_params(axis='both', which='major', labelsize=14)
+plt.title('ETH/USD: 1000 Monte Carlo Simulations', fontsize = 14)
+ax.set_xlabel('Time steps (days)', fontsize = 14)
+ax.get_legend().remove()
+fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
 
-#Of the simulations, find the worst 1
+##MKR
+sims = monte_carlo.asset_extractor_from_sims(simulations, 1)
+df = pd.DataFrame(sims)
+fig, ax = plt.subplots()
+df.plot(ax=ax)
+ax.set_ylabel('MKR/USD', fontsize = 14)
+ax.tick_params(axis='both', which='major', labelsize=14)
+plt.title('MKR/USD: 1000 Monte Carlo Simulations', fontsize = 14)
+ax.set_xlabel('Time steps (days)', fontsize = 14)
+ax.get_legend().remove()
+fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
+
+
+###Of the simulations, plot the worst ETH outcome one
 sims_eth = monte_carlo.asset_extractor_from_sims(simulations, 0)
 df_eth = pd.DataFrame(sims_eth)
 worst_eth_outcomes = df_eth.iloc[-1].nsmallest(1).index
 worst_eth = df_eth.loc[:, worst_eth_outcomes]
-worst_eth.plot()
+worst_eth.rename(columns = {"275": "ETH"})
 
-# #Find corresponding bad MKR outcomes
-# sims_mkr = monte_carlo.asset_extractor_from_sims(simulations, 1)
-# df_mkr = pd.DataFrame(sims_mkr)
-# corresponding_mkr_sims = df_mkr.loc[:, worst_eth_outcomes]
-# corresponding_mkr_sims.plot()
+#Find corresponding bad MKR outcomes
+sims_mkr = monte_carlo.asset_extractor_from_sims(simulations, 1)
+df_mkr = pd.DataFrame(sims_mkr)
+corresponding_mkr_sims = df_mkr.loc[:, worst_eth_outcomes]
+corresponding_mkr_sims.rename(columns = {"275": "ETH"})
+
+#Join and plot to see correlated movements
+df_joined = pd.concat([worst_eth, corresponding_mkr_sims], axis = 1)
+df_normalized = df_joined/df_joined.loc[0]
+fig, ax = plt.subplots()
+df_normalized.plot(ax=ax)
+ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
+ax.tick_params(axis='both', which='major', labelsize=14)
+plt.title('The co-evolution of the ETH and MKR price', fontsize = 14)
+ax.set_xlabel('Time steps (days)', fontsize = 14)
+fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 600)
+
 
 #################################################################
 ################       SIMULATION              ##################
