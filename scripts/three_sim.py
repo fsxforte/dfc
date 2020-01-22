@@ -32,6 +32,7 @@ DAI_DEBT = 300000000000
 MAX_ETH_SELLABLE_IN_24HOURS = 3447737 # Over period 13 Jan 2018 to 7 April 2018, avg vol
 COLLATERALIZATION_RATIO = 1.5
 QUANTITY_RESERVE_ASSET = 1000000 # About the right amount of MKR Reserve asset at the moment
+#go with BoE leverage ratio to govern the proportion of MKR token reserve to DAI debt
 
 ###############################################################
 #############           GET INPUT DATA                #########
