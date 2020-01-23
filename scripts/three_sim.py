@@ -131,7 +131,7 @@ fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches =
 #####
 
 debts = [30000000, 300000000, 3000000000, 30000000000]
-liquidities = [0.01, 0.02, 0.05, 1]
+liquidities = [0.5, 0.6, 0.7, 0.8]
 
 #Create 1 x 4 plot
 fig, ax = plt.subplots(1, 4, figsize=(16,4))
@@ -152,13 +152,13 @@ for i, debt in enumerate(debts):
         df_margins = pd.DataFrame(margin_simulations)
         worst_path_margin = df_margins.loc[:, worst_eth_outcomes]
         worst_path_margin = worst_path_margin.rename(columns={'13': str(liquidity)})
-        debt_master_df_margin['Liq.' + str(liquidity)] = worst_path_margin
+        debt_master_df_margin['Margin, '+ 'liq. ' + str(liquidity)] = worst_path_margin
 
         #Remaining debt
         df_debt = pd.DataFrame(dai_simulations)
         worst_path_debt = df_debt.loc[:, worst_eth_outcomes]
         worst_path_debt = worst_path_debt.rename(columns={'13': str(liquidity)})
-        debt_master_df_debt[str(liquidity)] = worst_path_debt
+        debt_master_df_debt['Debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
 
     #Of the plots, look at the worst 0.1% (worst ETH outcome)
     debt_master_df_margin.plot(ax = ax[i])
@@ -169,4 +169,10 @@ for i, debt in enumerate(debts):
     ax[0].set_ylabel('Total margin (USD)', fontsize = 14)
     ax[i].tick_params(axis='both', which='major', labelsize=14)
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
+    if i<len(debts)-1:
+        ax[i].get_legend().remove()
+    else:
+        handles, labels = ax[i].get_legend_handles_labels()
+        fig.legend(handles, labels, loc='lower center', ncol = len(debt_master_df_debt.columns) + len(debt_master_df_margin.columns))
+        ax[i].get_legend().remove()
     fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 600)
