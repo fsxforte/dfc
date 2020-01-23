@@ -21,16 +21,15 @@ from engine import monte_carlo
 #CONSTANTS
 TOKEN_BASKET = ['ETH', 'MKR'] # Can have n tokens in here
 NUM_SIMULATIONS = 1000
-DAYS_AHEAD = 50
+DAYS_AHEAD = 100
 TIME_INCREMENT = 1 # Frequency of data 
 
 #Select subset for 2018 until now
 start_date = dt.datetime(2018,1,1)
 end_date = dt.datetime(2018,4,20)
 
-INITIAL_MAX_ETH_SELLABLE_IN_24HOURS = 3447737 # Over period 13 Jan 2018 to 7 April 2018, avg vol
 COLLATERALIZATION_RATIO = 1.5 # Exactly right
-QUANTITY_RESERVE_ASSET = 1000000 # About the right amount of MKR Reserve asset at the moment
+QUANTITY_RESERVE_ASSET = 988787 # The right amount of MKR Reserve asset at the moment
 #go with BoE leverage ratio to govern the proportion of MKR token reserve to DAI debt
 
 ###############################################################
@@ -45,9 +44,12 @@ eth_prices.rename('ETH', inplace=True)
 mkr_prices = df_mkr['close']
 mkr_prices.rename('MKR', inplace=True)
 
+#Extract ETH volume on 13 January 2018
+INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS = df_eth.loc[dt.datetime(2018,1,13)]['volumefrom']
+
 #Extract period of ETH price crash
-start_date_crash = eth_prices.idxmax()
-end_date_crash = eth_prices.idxmin()
+start_date_crash = eth_prices.idxmax() # 13 January 2018
+end_date_crash = eth_prices.idxmin() # 6 April 2018
 
 #Filter to this period
 eth_prices = eth_prices[start_date_crash:end_date_crash]
@@ -101,13 +103,13 @@ sims_eth = monte_carlo.asset_extractor_from_sims(price_simulations, 0)
 df_eth = pd.DataFrame(sims_eth)
 worst_eth_outcomes = df_eth.iloc[-1].nsmallest(1).index
 worst_eth = df_eth.loc[:, worst_eth_outcomes]
-worst_eth = worst_eth.rename(columns = {"275": "ETH"})
+worst_eth = worst_eth.rename(columns = {"13": "ETH"})
 
 #Find corresponding bad MKR outcomes
 sims_mkr = monte_carlo.asset_extractor_from_sims(price_simulations, 1)
 df_mkr = pd.DataFrame(sims_mkr)
 corresponding_mkr_sims = df_mkr.loc[:, worst_eth_outcomes]
-corresponding_mkr_sims = corresponding_mkr_sims.rename(columns = {"275": "MKR"})
+corresponding_mkr_sims = corresponding_mkr_sims.rename(columns = {"13": "MKR"})
 
 #Join and plot to see correlated movements
 df_joined = pd.concat([worst_eth, corresponding_mkr_sims], axis = 1)
@@ -124,17 +126,47 @@ fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches =
 #########          SYSTEM MARGIN SIMULATIONS      ###############
 #################################################################
 
-system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = 3000000000, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP = 0)
+#####
+#### Plot evolution of margins over time steps
+#####
 
-#Plot evolution of margins over time steps
-#Vary liquidation rate parameter
-#Vary amount of DAI
-#Vary reserve size
+debts = [30000000, 300000000, 3000000000, 30000000000]
+liquidities = [0.01, 0.02, 0.05, 1]
 
-df = pd.DataFrame(system_simulations)
-df.plot()
+#Create 1 x 4 plot
+fig, ax = plt.subplots(1, 4, figsize=(16,4))
+for i, debt in enumerate(debts):
+    debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
+    debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
+    for liquidity in liquidities:
+        system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = debt, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP = liquidity)
+        
+        #Reconstruct dictionaries for margin and dai liability separately
+        margin_simulations = {}
+        dai_simulations = {}
+        for x in range(1, NUM_SIMULATIONS+1):
+            margin_simulations[str(x)] = system_simulations[str(x)][0]
+            dai_simulations[str(x)] = system_simulations[str(x)][1]
+        
+        #Total margins
+        df_margins = pd.DataFrame(margin_simulations)
+        worst_path_margin = df_margins.loc[:, worst_eth_outcomes]
+        worst_path_margin = worst_path_margin.rename(columns={'13': str(liquidity)})
+        debt_master_df_margin['Liq.' + str(liquidity)] = worst_path_margin
 
-#Plot distribution of margins at different time steps - violin plots
-#Vary liquidation rate parameter
-#Vary amount of DAI
-#Vary reserve size
+        #Remaining debt
+        df_debt = pd.DataFrame(dai_simulations)
+        worst_path_debt = df_debt.loc[:, worst_eth_outcomes]
+        worst_path_debt = worst_path_debt.rename(columns={'13': str(liquidity)})
+        debt_master_df_debt[str(liquidity)] = worst_path_debt
+
+    #Of the plots, look at the worst 0.1% (worst ETH outcome)
+    debt_master_df_margin.plot(ax = ax[i])
+    debt_master_df_debt.plot(ax = ax[i], style = '--')
+
+    #Graph polish
+    ax[i].set_title('Debt: ' + str(f'{debt:,}'))
+    ax[0].set_ylabel('Total margin (USD)', fontsize = 14)
+    ax[i].tick_params(axis='both', which='major', labelsize=14)
+    ax[0].set_xlabel('Time steps (days)', fontsize = 14)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 600)

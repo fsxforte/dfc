@@ -116,7 +116,7 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 		dai_liability = []
 		eth_collateral = []
 		for index, price in enumerate(eth_sim_version):
-			print(index)
+			#print(index)
 
 			if index == 0:
 
@@ -129,7 +129,7 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 				
 				#Calculate the maximum ETH/USD value that can be liquidated
 				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
-				print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
+				#print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
 
 				#If the total DAI debt exceeds the amount that can be liquidated in a single day
 				if dai_balance_outstanding > max_daily_eth_liquidation_usd:
@@ -150,13 +150,13 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 					dai_liability.append(residual_dai)
 
 				#MARGIN
-				print('Residual DAI: ' + str(residual_dai))
+				#print('Residual DAI: ' + str(residual_dai))
 				eth_margin = remaining_collateral * eth_sim_version[index + 1]  #USD
-				print('ETH margin: ' + str(eth_margin))
+				#print('ETH margin: ' + str(eth_margin))
 				mkr_margin = QUANTITY_RESERVE_ASSET * mkr_sim_version[index + 1] #USD
-				print('MKR margin: ' + str(mkr_margin))
+				#print('MKR margin: ' + str(mkr_margin))
 				total_margin = eth_margin + mkr_margin - residual_dai #USD
-				print('Total margin: ' + str(total_margin))
+				#print('Total margin: ' + str(total_margin))
 				total_margins.append(total_margin)
 				
 			if (index < len(eth_sim_version) - 1) & (index > 0):
@@ -164,7 +164,7 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 				dai_balance_outstanding = dai_liability[index - 1] # USD
 				avg_eth_price = (eth_sim_version[index] + eth_sim_version[index + 1]) / 2
 				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
-				print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
+				#print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
 
 				if dai_balance_outstanding > max_daily_eth_liquidation_usd:
 					#Assets
@@ -182,15 +182,15 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 					dai_liability.append(residual_dai)
 				
 				#MARGIN
-				print('Residual DAI: ' + str(residual_dai))
+				#print('Residual DAI: ' + str(residual_dai))
 				eth_margin = remaining_collateral * eth_sim_version[index + 1] #USD
-				print('ETH margin: ' + str(eth_margin))
+				#print('ETH margin: ' + str(eth_margin))
 				mkr_margin = QUANTITY_RESERVE_ASSET * mkr_sim_version[index + 1] #USD
-				print('MKR margin: ' + str(mkr_margin))
+				#print('MKR margin: ' + str(mkr_margin))
 				total_margin = eth_margin + mkr_margin - residual_dai
-				print('Total margin: ' + str(total_margin))
+				#print('Total margin: ' + str(total_margin))
 				total_margins.append(total_margin)
 		
-		sims[str(simulation)] = total_margins
+		sims[str(simulation)] = (total_margins, dai_liability)
 
 	return sims
