@@ -99,7 +99,7 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	
 	return asset_sims
 
-def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP):
+def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:param_of_interest: whether to return margins, dai_liabilities or eth_collateral in the output
@@ -128,13 +128,13 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 				starting_eth_collateral = DAI_DEBT * COLLATERALIZATION_RATIO / eth_sim_version[index] #ETH
 				
 				#Calculate the maximum ETH/USD value that can be liquidated
-				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
+				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
 				#print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
 
 				#If the total DAI debt exceeds the amount that can be liquidated in a single day
 				if dai_balance_outstanding > max_daily_eth_liquidation_usd:
 					#Assets (i.e. ETH collateral)
-					remaining_collateral = starting_eth_collateral - INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
+					remaining_collateral = starting_eth_collateral - INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
 					eth_collateral.append(remaining_collateral)
 					#Liabilities (i.e. DAI debt still owed)                    
 					residual_dai = dai_balance_outstanding - max_daily_eth_liquidation_usd
@@ -163,12 +163,12 @@ def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, 
 				#DAI liabilities
 				dai_balance_outstanding = dai_liability[index - 1] # USD
 				avg_eth_price = (eth_sim_version[index] + eth_sim_version[index + 1]) / 2
-				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
+				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
 				#print('Max USD value of ETH that can be liquidated: ' + str(max_daily_eth_liquidation_usd))
 
 				if dai_balance_outstanding > max_daily_eth_liquidation_usd:
 					#Assets
-					remaining_collateral = eth_collateral[index - 1] - INITIAL_MAX_ETH_SELLABLE_IN_24HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
+					remaining_collateral = eth_collateral[index - 1] - INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
 					eth_collateral.append(remaining_collateral)
 					#Liabilities
 					residual_dai = dai_balance_outstanding - max_daily_eth_liquidation_usd # USD

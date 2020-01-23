@@ -80,7 +80,7 @@ ax.tick_params(axis='both', which='major', labelsize=14)
 plt.title('ETH/USD: 1000 Monte Carlo Simulations', fontsize = 14)
 ax.set_xlabel('Time steps (days)', fontsize = 14)
 ax.get_legend().remove()
-fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
+fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
 
 ##MKR
 sims = monte_carlo.asset_extractor_from_sims(price_simulations, 1)
@@ -92,7 +92,7 @@ ax.tick_params(axis='both', which='major', labelsize=14)
 plt.title('MKR/USD: 1000 Monte Carlo Simulations', fontsize = 14)
 ax.set_xlabel('Time steps (days)', fontsize = 14)
 ax.get_legend().remove()
-fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
+fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
 
 #########
 ### 2. Plot of worst outcome
@@ -120,7 +120,7 @@ ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
 ax.tick_params(axis='both', which='major', labelsize=14)
 plt.title('The co-evolution of the ETH and MKR price', fontsize = 14)
 ax.set_xlabel('Time steps (days)', fontsize = 14)
-fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 600)
+fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 300)
 
 #################################################################
 #########          SYSTEM MARGIN SIMULATIONS      ###############
@@ -130,8 +130,8 @@ fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches =
 #### Plot evolution of margins over time steps
 #####
 
-debts = [30000000, 15000000000, 16000000000, 17000000000]
-liquidities = [0, 0.06, 0.07, 0.08]
+debts = [30000000, 2000000000, 3000000000, 4000000000]
+liquidities = [0, 0.04, 0.05, 0.06]
 
 #Create 1 x 4 plot
 fig, ax = plt.subplots(1, 4, figsize=(18,6))
@@ -139,7 +139,7 @@ for i, debt in enumerate(debts):
     debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
     debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
     for liquidity in liquidities:
-        system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = debt, INITIAL_MAX_ETH_SELLABLE_IN_24HOURS = INITIAL_MAX_ETH_SELLABLE_IN_24HOURS, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP = liquidity)
+        system_simulations = monte_carlo.crash_simulator(simulations = price_simulations, DAI_DEBT = debt, INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS = INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS, COLLATERALIZATION_RATIO = COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET = QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP = liquidity)
         
         #Reconstruct dictionaries for margin and dai liability separately
         margin_simulations = {}
@@ -169,6 +169,11 @@ for i, debt in enumerate(debts):
     ax[0].set_ylabel('USD', fontsize = 14)
     ax[i].tick_params(axis='both', which='major', labelsize=14)
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
+
+    #Shading
+    ax_lims = ax[i].get_ylim()
+    ax[i].axhspan(ax_lims[0], 0, facecolor='red', alpha=0.5)
+
     if i<len(debts)-1:
         ax[i].get_legend().remove()
     else:
@@ -176,4 +181,4 @@ for i, debt in enumerate(debts):
         fig.legend(handles, labels, fontsize = 12, columnspacing=0.15, loc='upper center', ncol = len(debt_master_df_debt.columns) + len(debt_master_df_margin.columns)) #bbox_to_anchor=(0., -0.02))#, 1., .102))#bbox_to_anchor=(-0.05, -0.015, 1., .102))
         ax[i].get_legend().remove()
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 600)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 300)
