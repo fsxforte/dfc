@@ -192,3 +192,5 @@ for i, debt in enumerate(debts):
         ax[i].get_legend().remove()
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
     fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 300)
+
+#Double check the logic surrounding the collaeralization ratio and conversion to margin - do you need to subtract 1 somewhere???
