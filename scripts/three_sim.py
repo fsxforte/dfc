@@ -7,6 +7,8 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.patches import Rectangle
+
 
 sns.set(style="darkgrid")
 
@@ -31,9 +33,6 @@ end_date = dt.datetime(2018,4,20)
 COLLATERALIZATION_RATIO = 1.5 # Exactly right
 QUANTITY_RESERVE_ASSET = 988787 # The right amount of MKR Reserve asset at the moment
 #go with BoE leverage ratio to govern the proportion of MKR token reserve to DAI debt
-
-markers = ['s', 'p', 'v', '^']
-
 
 ###############################################################
 #############           GET INPUT DATA                #########
@@ -134,10 +133,12 @@ fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches =
 #####
 
 debts = [30000000, 2000000000, 3000000000, 4000000000]
-liquidities = [0, 0.04, 0.05, 0.06]
+liquidities = [0, 0.04, 0.06]
 
 #Create 1 x 4 plot
-fig, ax = plt.subplots(1, 4, figsize=(18,6))
+markers = ['s', 'p', 'v',]
+colors = ['g', 'k', 'r']
+fig, ax = plt.subplots(1, 4, figsize=(18,7))
 for i, debt in enumerate(debts):
     debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
     debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
@@ -161,21 +162,22 @@ for i, debt in enumerate(debts):
         df_debt = pd.DataFrame(dai_simulations)
         worst_path_debt = df_debt.loc[:, worst_eth_outcomes]
         worst_path_debt = worst_path_debt.rename(columns={'13': str(liquidity)})
-        debt_master_df_debt['Debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
+        debt_master_df_debt['Initial debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
 
-    #Of the plots, look at the worst 0.1% (worst ETH outcome)
     #Margin
     debt_master_df_margin.plot(ax = ax[i], markevery = 10)
     for k, line in enumerate(ax[i].get_lines()):
         line.set_marker(markers[k])
+        line.set_color(colors[k])
 
     #Debt
     debt_master_df_debt.plot(ax = ax[i], style = '--', markevery = 10)
     for k, line in enumerate(ax[i].get_lines()[len(debt_master_df_margin.columns):]):
         line.set_marker(markers[k])
+        line.set_color(colors[k])
 
     #Graph polish
-    ax[i].set_title('Debt: ' + str(f'{debt:,}'))
+    ax[i].set_title('Debt: ' + str(f'{debt:,}'), fontsize = 14)
     ax[0].set_ylabel('USD', fontsize = 14)
     ax[i].tick_params(axis='both', which='major', labelsize=14)
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
@@ -188,9 +190,9 @@ for i, debt in enumerate(debts):
         ax[i].get_legend().remove()
     else:
         handles, labels = ax[i].get_legend_handles_labels()
-        fig.legend(handles, labels, fontsize = 12, columnspacing=0.4, loc='upper center', ncol = len(debt_master_df_debt.columns) + len(debt_master_df_margin.columns)) #bbox_to_anchor=(0., -0.02))#, 1., .102))#bbox_to_anchor=(-0.05, -0.015, 1., .102))
+        extra = Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
+        fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Liquidity: '+ str(liquidities[0]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidities[1]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidities[2]), 'Margin', 'Remaining debt'], loc = 'upper right', borderaxespad = 0.2, frameon=False)
         ax[i].get_legend().remove()
-    fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 300)
-
-#Double check the logic surrounding the collaeralization ratio and conversion to margin - do you need to subtract 1 somewhere???
+fig.suptitle('A Decentralized Financial Crisis: illiquidity causing negative margins', fontsize = 16)
+fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
+fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 300)
