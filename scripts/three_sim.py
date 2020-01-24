@@ -132,8 +132,8 @@ fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches =
 #### Plot evolution of margins over time steps
 #####
 
-debts = [30000000, 12000000000, 20000000000, 30000000000]
-liquidities = [0, 0.04, 0.06]
+debts = [30000000, 20000000000, 25000000000, 30000000000]
+liquidities = [0, 0.01, 0.02]
 
 #Create 1 x 4 plot
 markers = ['s', 'p', 'v',]
