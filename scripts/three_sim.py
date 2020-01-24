@@ -132,13 +132,13 @@ fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches =
 #### Plot evolution of margins over time steps
 #####
 
-debts = [30000000, 2000000000, 3000000000, 4000000000]
+debts = [30000000, 12000000000, 20000000000, 30000000000]
 liquidities = [0, 0.04, 0.06]
 
 #Create 1 x 4 plot
 markers = ['s', 'p', 'v',]
 colors = ['g', 'k', 'r']
-fig, ax = plt.subplots(1, 4, figsize=(18,7))
+fig, ax = plt.subplots(1, 4, figsize=(18,8))
 for i, debt in enumerate(debts):
     debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
     debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
@@ -177,10 +177,8 @@ for i, debt in enumerate(debts):
         line.set_color(colors[k])
 
     #Graph polish
-    ax[i].set_title('Debt: ' + str(f'{debt:,}'), fontsize = 14)
-    ax[0].set_ylabel('USD', fontsize = 14)
+    ax[i].set_title('Initial debt: ' + str(f'{debt:,}'), fontsize = 10.5)
     ax[i].tick_params(axis='both', which='major', labelsize=14)
-    ax[0].set_xlabel('Time steps (days)', fontsize = 14)
 
     #Shading
     ax_lims = ax[i].get_ylim()
@@ -191,8 +189,12 @@ for i, debt in enumerate(debts):
     else:
         handles, labels = ax[i].get_legend_handles_labels()
         extra = Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-        fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Liquidity: '+ str(liquidities[0]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidities[1]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidities[2]), 'Margin', 'Remaining debt'], loc = 'upper right', borderaxespad = 0.2, frameon=False)
+        fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Liquidity: '+ str(liquidities[0]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidities[1]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidities[2]), 'Margin', 'Remaining debt'], loc = 'lower center', ncol=3, borderaxespad=0., fontsize = 14)#, bbox_to_anchor=(0.5,-0.0005))
         ax[i].get_legend().remove()
-fig.suptitle('A Decentralized Financial Crisis: illiquidity causing negative margins', fontsize = 16)
+
+fig.subplots_adjust(bottom=0.2) 
+ax[0].set_ylabel('USD', fontsize = 14)
+ax[0].set_xlabel('Time steps (days)', fontsize = 14)
+fig.suptitle('A Decentralized Financial Crisis: illiquidity causing negative margins', fontsize = 18)
 fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', bbox_inches = 'tight', dpi = 300)
+fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', dpi = 300)
