@@ -193,7 +193,7 @@ for i, debt in enumerate(debts):
 fig.subplots_adjust(bottom=0.2) 
 ax[0].set_ylabel('USD', fontsize = 14)
 ax[0].set_xlabel('Time steps (days)', fontsize = 14)
-fig.suptitle('A Decentralized Financial Crisis: illiquidity causing negative margins', fontsize = 18)
+fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
 fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
 fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', dpi = 300, bbox_to_inches='tight')
 
