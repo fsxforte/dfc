@@ -1,1 +1,12 @@
-MCD_TOKENS = ['DAI', 'ETH', 'REP', 'ZRX', 'BAT']
+#MCD_TOKENS = ['DAI', 'ETH', 'REP', 'ZRX', 'BAT']
+
+TOKEN_BASKET = ['ETH', 'MKR'] # Can have n tokens in here
+NUM_SIMULATIONS = 1000
+DAYS_AHEAD = 100
+TIME_INCREMENT = 1 # Frequency of data 
+
+COLLATERALIZATION_RATIO = 1.5 # Exactly right
+QUANTITY_RESERVE_ASSET = 988787 # The right amount of MKR Reserve asset at the moment
+
+DEBTS = [30000000, 20000000000, 25000000000, 30000000000]
+LIQUIDITIES = [0, 0.01, 0.02]
