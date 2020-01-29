@@ -8,6 +8,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.patches import Rectangle
+import matplotlib.ticker as ticker
+
 
 sns.set(style="darkgrid")
 
@@ -211,7 +213,7 @@ worst_eth_outcomes = df_eth.iloc[-1].nsmallest(1).index
 INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS = eth_liquidity_start_crisis(TOKEN_BASKET, start_date, end_date)
 
 debts = []
-for x in range(0, 100000000000, 1000000000):
+for x in range(0, 100000000000, 10000000000):
     debts.append(x)
 
 liquidities = []
@@ -247,9 +249,9 @@ sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r')
 
 ax.set_ylabel('Debt (USD)', fontsize = 18)
 ax.set_xlabel('Liquidity parameter', fontsize = 18)
-fig.suptitle('Number of days until negative margin', fontsize = 18)
+fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
 ax.tick_params(axis='both', which='major', labelsize=18)
 plt.xticks(rotation=90)
 ax.figure.axes[-1].yaxis.label.set_size(18)
-#ax.yaxis.set_major_locator(plt.MaxNLocator(5))
 fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.png', dpi = 600, bbox_inches='tight')
+
