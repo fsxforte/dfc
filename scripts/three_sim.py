@@ -23,6 +23,7 @@ end_date = dt.datetime(2018,4,20)
 ####################################################################
 
 def make_crash_df(start_date: dt.datetime, end_date: dt.datetime):
+
     '''
     Make a dataframe containing data on ETH and MKR prices over the period of the crash in early 2018.
     '''
@@ -81,7 +82,7 @@ def plot_monte_carlos(price_simulations):
     plt.title('ETH/USD: 1000 Monte Carlo Simulations', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
     ax.get_legend().remove()
-    fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
 
     ##MKR
     sims = monte_carlo.asset_extractor_from_sims(price_simulations, 1)
@@ -93,7 +94,7 @@ def plot_monte_carlos(price_simulations):
     plt.title('MKR/USD: 1000 Monte Carlo Simulations', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
     ax.get_legend().remove()
-    fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
 
 def plot_worst_simulation(price_simulations):
     '''
@@ -121,7 +122,7 @@ def plot_worst_simulation(price_simulations):
     ax.tick_params(axis='both', which='major', labelsize=14)
     plt.title('The co-evolution of the ETH and MKR price', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 600)
 
 #################################################################
 #########          SYSTEM MARGIN SIMULATIONS      ###############
@@ -197,7 +198,7 @@ def plot_sims(DEBTS, LIQUIDITIES, price_simulations, start_date, end_date, TOKEN
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', dpi = 300, bbox_to_inches='tight')
+    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', dpi = 600, bbox_inches='tight')
 
 #################################################################
 #########          Liquidity vs debt size         ###############
@@ -241,14 +242,14 @@ for i in debts:
 df_pairs_clean = df_pairs.dropna()
 sns.set(font_scale=1.4)
 
-fig, ax = plt.subplots(1,1, figsize=(13,8))
+fig, ax = plt.subplots(1,1, figsize=(10,8))
 sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r')
 
-ax.set_ylabel('Debt (USD)', fontsize = 14)
-ax.set_xlabel('Liquidity parameter', fontsize = 14)
+ax.set_ylabel('Debt (USD)', fontsize = 18)
+ax.set_xlabel('Liquidity parameter', fontsize = 18)
 fig.suptitle('Number of days until negative margin', fontsize = 18)
-ax.tick_params(axis='both', which='major', labelsize=14)
-plt.locator_params(axis='y', nbins=10)
-#cbar.ax.tick_params(labelsize=14)
-ax.figure.axes[-1].yaxis.label.set_size(14)
-fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.png', dpi = 300, bbox_to_inches='tight')
+ax.tick_params(axis='both', which='major', labelsize=18)
+plt.xticks(rotation=90)
+ax.figure.axes[-1].yaxis.label.set_size(18)
+#ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.png', dpi = 600, bbox_inches='tight')
