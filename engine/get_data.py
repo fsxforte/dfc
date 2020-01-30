@@ -13,6 +13,8 @@ import datetime as dt
 from time import mktime
 
 from settings import API_KEY
+from constants import TOKEN_BASKET
+from engine import simulation
 
 time_now = int(time.time())
 
@@ -89,6 +91,11 @@ def get_CDP_data():
 
 #Make into DataFrame
 def create_df(from_sym: str, to_sym: str, allData: str = 'true'):
+	'''
+	Assemble cryptocompare data into a dataframe.
+	:from_sym: base currency
+	:to_sym: quote currency
+	'''
 	#Retrieve data from the API
 	api_response = get_cryptocompare_data(from_sym = from_sym, to_sym = to_sym, allData = allData).json()
 	df = pd.io.json.json_normalize(api_response['Data']['Data'])
@@ -100,8 +107,8 @@ def create_df(from_sym: str, to_sym: str, allData: str = 'true'):
 def create_close_df():
 	#Build matrix of close prices for MCD tokens
 	close_master = pd.DataFrame()
-	for token in constants.MCD_TOKENS:
-		token_df = create_df(from_sym = token, to_sym = 'USDT')
+	for token in constants.TOKEN_BASKET:
+		token_df = create_df(from_sym = token, to_sym = 'USD')
 		close = token_df['close']
 		close = close.rename(token)
 		close_master = pd.concat([close_master, close], axis = 1)
@@ -111,7 +118,7 @@ def create_close_df():
 def create_logrets_df():
 	#Build matrix of close prices for MCD tokens
 	logreturns_master = pd.DataFrame()
-	for token in constants.MCD_TOKENS:
+	for token in constants.TOKEN_BASKET:
 		token_df = create_df(from_sym = token, to_sym = 'USD')
 		token_df.replace(0.0, np.nan, inplace=True)
 		rets = np.log(token_df['close']) - np.log(token_df['close'].shift(1))
@@ -128,7 +135,6 @@ def create_logrets_series(df):
 	log_returns = np.log(df['close']) - np.log(df['close'].shift(1))
 	log_returns = log_returns.dropna()
 	return log_returns
-
 
 def get_hourly_cryptocompare_data(from_sym: str, to_sym: str, start_date: dt.datetime, end_date: dt.datetime, exchange: str = None):
 	'''
@@ -180,3 +186,34 @@ def get_hourly_cryptocompare_data(from_sym: str, to_sym: str, start_date: dt.dat
 	df_master = df_master.set_index('time')
 	
 	return df_master[start_date:end_date]
+
+def get_crisis_endpoints(start_date: dt.datetime, end_date: dt.datetime):
+    '''
+    Extract the exact dates of the ETH price at the start of 2018.
+	:start_date: start date of window within which to search for min/max
+	:end_date: end date of window within which to search for min/max
+    '''
+    #Get ETH price for data window data
+    df_eth = create_close_df()['ETH'][start_date:end_date]
+
+    #Extract period of ETH price crash
+    start_date_crash = df_eth.idxmax()
+    end_date_crash = df_eth.idxmin()
+    return start_date_crash, end_date_crash
+
+def liquidity_on_date(token: str, start_date_data: dt.datetime, end_date_data: dt.datetime, date_of_interest: dt.datetime):
+    '''
+    Extract the volume of a particular token on a particular date.
+    '''
+    df = create_df(token, 'USD')[start_date_data:end_date_data]
+    vol = df.loc[date_of_interest]['volumefrom']
+    return vol
+
+def extract_index_of_worst_sim(price_simulations):
+	'''
+	Find which of the simulator runs resulted in the lowest ETH price at the end. 
+	:price_simulations: data from the Monte Carlo simulations. 
+	'''
+	sims_eth = simulation.asset_extractor_from_sims(price_simulations, 0)
+	df_eth = pd.DataFrame(sims_eth)
+	return df_eth.iloc[-1].nsmallest(1).index

@@ -1,5 +1,3 @@
-#MCD_TOKENS = ['DAI', 'ETH', 'REP', 'ZRX', 'BAT']
-
 TOKEN_BASKET = ['ETH', 'MKR'] # Can have n tokens in here
 NUM_SIMULATIONS = 1000
 DAYS_AHEAD = 100

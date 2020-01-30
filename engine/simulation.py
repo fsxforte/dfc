@@ -101,81 +101,81 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	
 	return asset_sims
 
-def crash_simulator(simulations, DAI_DEBT, INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, LIQUIDITY_DRYUP):
+def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:param_of_interest: whether to return margins, dai_liabilities or eth_collateral in the output
 	:simulations: monte carlo simulations of correlated price movements
-	:DAI_DEBT: amount of system DAI DEBT
-	:INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS: maximum liquidity supportable by market at start of crash, decays exponentially
-	:COLLATERALIZATION_RATIO: system collateralization ratio
+	:initial_debt: amount of initial system debt
+	:initial_eth_vol: maximum liquidity supportable by market at start of crash, decays exponentially
+	:collateralization_ratio: system collateralization ratio
     '''
 	sims = {}
 	for simulation in range(1, len(simulations) + 1):
 		eth_sim_prices = simulations[str(simulation)][0]
 		mkr_sim_prices = simulations[str(simulation)][1]
 		total_margins = []
-		debt = []
+		debts = []
 		eth_collateral = []
 		for index, price in enumerate(eth_sim_prices):
 			if index == 0:
 
-				#Set the initial base case from the first price where a sell off of all DAI_DEBT is triggered
+				#Set the initial base case from the first price where a sell off of all debt is triggered
 				eth_price = eth_sim_prices[index] # ETH/USD
 
 				#Calculate the ETH holdings corresponding to the assumption of exactly 150% collateralization at the start
-				starting_eth_collateral = DAI_DEBT * COLLATERALIZATION_RATIO / eth_sim_prices[index] #ETH
+				starting_eth_collateral = initial_debt * collateralization_ratio / eth_sim_prices[index] #ETH
 				
 				#Assets
 				eth_collateral.append(starting_eth_collateral) #ETH
 
 				#Liabilities
-				debt.append(DAI_DEBT) #USD
+				debts.append(initial_debt) #USD
 
 				#MARGIN
 				total_eth = starting_eth_collateral * eth_sim_prices[index]  #USD
 				#print('Total ETH: ' + str(total_eth))
-				total_mkr = QUANTITY_RESERVE_ASSET * mkr_sim_prices[index] #USD
+				total_mkr = quantity_reserve_asset * mkr_sim_prices[index] #USD
 				#print('Total MKR: ' + str(total_mkr))
-				margin = total_eth + total_mkr - DAI_DEBT #USD
-				#print('Debt: ' + str(DAI_DEBT))
+				margin = total_eth + total_mkr - initial_debt #USD
+				#print('Debt: ' + str(debt))
 				#print('Total margin: ' + str(margin))
 				total_margins.append(margin)
 				
 			if (index > 0) & (index < len(eth_sim_prices) - 1):
 				
 				#Debt
-				debt_start_period = debt[index - 1] # USD
+				debt_start_period = debts[index - 1] # USD
 
 				#Calculate how many USD of ETH can be sold each period
 				avg_eth_price = (eth_sim_prices[index-1] + eth_sim_prices[index]) / 2
-				max_daily_eth_liquidation_usd = INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) * avg_eth_price #USD
+				max_daily_eth_liquidation_usd = initial_eth_vol*np.math.exp(-1 * liquidity_dryup * index) * avg_eth_price #USD
 
 				if debt_start_period > max_daily_eth_liquidation_usd:
 					#Assets
-					eth_collateral_end_period = eth_collateral[index - 1] - INITIAL_MAX_ETH_SELLABLE_IN_24_HOURS*np.math.exp(-1 * LIQUIDITY_DRYUP * index) #ETH
+					eth_collateral_end_period = eth_collateral[index - 1] - initial_eth_vol*np.math.exp(-1 * liquidity_dryup * index) #ETH
 					eth_collateral.append(eth_collateral_end_period)
 					#Liabilities
 					debt_end_period = debt_start_period - max_daily_eth_liquidation_usd # USD
-					debt.append(debt_end_period)
+					debts.append(debt_end_period)
 				else:
 					#Assets
 					eth_collateral_end_period = eth_collateral[index - 1] - debt_start_period/avg_eth_price
 					eth_collateral.append(eth_collateral_end_period)
 					debt_end_period = 0
 					#Liabilities
-					debt.append(debt_end_period)
+					debts.append(debt_end_period)
 				
 				#MARGIN
 				total_eth = eth_collateral_end_period * eth_sim_prices[index] #USD
 				#print('Total ETH: ' + str(total_eth))
-				total_mkr = QUANTITY_RESERVE_ASSET * mkr_sim_prices[index] #USD
+				total_mkr = quantity_reserve_asset * mkr_sim_prices[index] #USD
 				#print('Total MKR: ' + str(total_mkr))
 				total_margin = total_eth + total_mkr - debt_end_period #USD
 				#print('Debt: ' + str(debt_end_period))
 				#print('Total margin: ' + str(total_margin))
 				total_margins.append(total_margin)
 		
-		sims[str(simulation)] = (total_margins, debt)
+		sims[str(simulation)] = (total_margins, debts)
 
 	return sims
