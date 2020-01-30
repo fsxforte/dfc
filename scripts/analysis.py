@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 from scipy import stats
 import numpy as np
+import seaborn as sns
 
 from engine import get_data, plots, simulation
 from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUIDITIES, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET
@@ -25,13 +26,13 @@ initial_eth_vol = get_data.liquidity_on_date(token = 'ETH', start_date_data = ST
 price_simulations = simulation.multivariate_monte_carlo(crash_df, NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT)
 
 #5. Plot the simulated ETH and MKR prices
-plots.plot_monte_carlos(price_simulations)
+plots.plot_monte_carlo_simulations(price_simulations)
 
 #6. Plot the worst (joint) path
 plots.plot_worst_simulation(price_simulations)
 
 #7. Plot simulation outputs for debts and liquidities
-plots.plot_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol)
+plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol)
 
 #8. Plot heatmap
 debts = []

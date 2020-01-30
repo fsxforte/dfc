@@ -33,7 +33,6 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	S0 = historical_prices.iloc[0]
 	#S0 = historical_prices.iloc[-1]
 
-
 	#Mean log return
 	mu = np.mean(log_returns)
 	print('mu: ' + str(mu))
@@ -104,7 +103,6 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
-	:param_of_interest: whether to return margins, dai_liabilities or eth_collateral in the output
 	:simulations: monte carlo simulations of correlated price movements
 	:initial_debt: amount of initial system debt
 	:initial_eth_vol: maximum liquidity supportable by market at start of crash, decays exponentially
@@ -179,3 +177,15 @@ def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralizatio
 		sims[str(simulation)] = (total_margins, debts)
 
 	return sims
+
+# def undercollateralized_debt(price_simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
+# 	'''
+# 	For each simulation extract the amount of debt that is undercollateralized when the margin goes negative.
+# 	'''
+# 	sim_results = crash_simulator(simulations = price_simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup)
+
+#Logic
+#Money multiplier of 3 means for every USD borrowed, 3 more are created in additional defi lending protocols
+# --> can consider a range of money multipliers (what are the money multipliers in traditional finance?)
+# --> for each initial debt level and liquidity, at the point the margin goes negative, the outstanding debt becomes worthless because it is not redeemable
+# --> therefore for margin can compute what the expected loss is as the number of protocols grows. 

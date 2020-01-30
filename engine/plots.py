@@ -10,10 +10,8 @@ import matplotlib as mpl
 from matplotlib.patches import Rectangle
 import matplotlib.ticker as ticker
 
-
 from engine import get_data
 from engine import simulation
-from scripts import analysis
 from constants import TOKEN_BASKET, DAYS_AHEAD, COLLATERALIZATION_RATIO, NUM_SIMULATIONS, QUANTITY_RESERVE_ASSET
 
 sns.set(style="darkgrid")
@@ -141,7 +139,7 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     plt.title('ETH/USD and MKR/USD close prices', fontsize = 14)
     fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.png', bbox_inches = 'tight', dpi = 300)
 
-def plot_simulations(price_simulations):
+def plot_monte_carlo_simulations(price_simulations):
     '''
     Plot the ETH and MKR simulated outcomes
     '''
@@ -194,7 +192,7 @@ def plot_worst_simulation(price_simulations):
 	ax.set_xlabel('Time steps (days)', fontsize = 14)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 600)
 
-def plot_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
+def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
     '''
     Plot system simulation.
     '''
