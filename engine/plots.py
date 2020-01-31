@@ -297,3 +297,35 @@ def plot_heatmap(debt_levels, liquidity_levels, price_simulations, initial_eth_v
 	plt.xticks(rotation=90)
 	ax.figure.axes[-1].yaxis.label.set_size(18)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.png', dpi = 600, bbox_inches='tight')
+
+def plot_worst_economy_outcomes(df, collateralization_ratio):
+	'''
+	Plot the worst case economy outcomes when protocols are composed. 
+	'''
+	
+	df.plot(ax = ax)
+	ax.get_legend().remove()
+	ax.set_ylabel('Loss (USD)', fontsize = 18)
+	ax.set_xlabel('Number of additional protocols', fontsize = 18)
+	fig.suptitle('Financial losses with composable protocols', fontsize = 20)
+	ax.tick_params(axis='both', which='major', labelsize=18)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.png', dpi = 600, bbox_inches='tight')
+
+
+def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, number_of_simulations, oc_levels):
+	'''
+	For a list of overcollateralization levels, plot the worst case outcomes for each economy size.
+	'''
+	fig, ax = plt.subplots(1,3, figsize=(10,4))
+	for index, oc_level in enumerate(oc_levels):
+		sims = simulation.protocol_composer(max_number_of_protocols = max_number_of_protocols, crash_debts_df = crash_debts_df, max_oc_requirement = oc_level, number_of_simulations = number_of_simulations)
+		worst_outcomes = simulation.worst_case_per_protocol_number(sims)
+		worst_outcomes.plot(ax = ax[index])
+		ax[index].get_legend().remove()
+		ax[index].set_title('O/C: ' + str(oc_level), fontsize = 12)
+		ax[index].tick_params(axis='both', which='major', labelsize=14)
+	ax[0].set_ylabel('Total loss (USD)', fontsize = 14)
+	ax[0].set_xlabel('Number of additional protocols', fontsize = 14)
+	fig.suptitle('Financial losses with composable protocols', fontsize = 18)
+	#fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/protocol_defaults.png', dpi = 600, bbox_inches='tight')

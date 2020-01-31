@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 
 from engine import get_data, plots, simulation
-from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUIDITIES, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET
+from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUIDITIES, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, OC_LEVELS
 
 START_DATE_DATA = dt.datetime(2018,1,1) # First data for MKR token
 END_DATE_DATA = dt.datetime(2018,6,1)
@@ -46,4 +46,10 @@ for x in np.arange(0, 0.11, 0.01):
 plots.plot_heatmap(debt_levels = debts, liquidity_levels = liquidities, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol)
 
 #9. Get sim results (free-standing)
-sim_results = simulation.crash_simulator(simulations = price_simulations, initial_debt=23000000000, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = 0.01)
+sim_results = simulation.crash_simulator(simulations = price_simulations, initial_debt=23000000000, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = 0.5)
+
+#10. Find the debt outstanding when market crashes
+debts_outstanding = simulation.crash_debts(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET)
+
+#11. Examine what the worst case is from #11 (for each economy size)
+plots.plot_protocol_universe_default(max_number_of_protocols = 30, crash_debts_df = debts_outstanding, number_of_simulations = 100, oc_levels = OC_LEVELS)

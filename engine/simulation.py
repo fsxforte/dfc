@@ -5,6 +5,7 @@ import math
 from matplotlib import style
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+from random import uniform
 
 from engine import get_data
 from engine import kernel_estimation
@@ -192,15 +193,88 @@ def undercollateralized_debt(sim_results):
 			if margin < 0:
 				negative_margins.append(index)
 
-		if len negative_margins > 0:
-			first_negative_margin = negative_margins[0]
-		else first_negative_margin = None
+		if len(negative_margins) > 0:
+			first_negative_margin_index = negative_margins[0]		
+			debt_when_negative_margin = debts[first_negative_margin_index]
+		else:
+			debt_when_negative_margin = 0
+	
+	return debt_when_negative_margin
 
+def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, collateralization_ratio, quantity_reserve_asset):
+	'''
+	For the considered range of debts and liquidities, create a DataFrame of the debt at the point of collapse. 
+	'''
+	df = pd.DataFrame(index = debt_levels, columns = liquidity_levels)
 
+	for i in debt_levels:
+		for j in liquidity_levels:
+			sim_results = crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = collateralization_ratio, quantity_reserve_asset = quantity_reserve_asset, liquidity_dryup = j)
+			debt_when_negative_margin = undercollateralized_debt(sim_results)
+			df.loc[int(i)][float(j)] = debt_when_negative_margin
+	
+	return df
 
+def protocol_composer(max_number_of_protocols, crash_debts_df, max_oc_requirement, number_of_simulations):
+	'''
+	Multiplier in the case of multiple DeFi protocols. 
+	'''
+	sims = {}
+	for simulation in range(1, number_of_simulations + 1):
+		debt_shares_master = []
+		for no_of_protocols in range(1, max_number_of_protocols + 1):
+			per_protocol_debt = crash_debts_df / no_of_protocols
+			debt_shares = []
+			for i in range(1, no_of_protocols + 1):
+				debt_shares.append(per_protocol_debt)
+			debt_shares_master.append(debt_shares)
 
-#Logic
-#Money multiplier of 3 means for every USD borrowed, 3 more are created in additional defi lending protocols
-# --> can consider a range of money multipliers (what are the money multipliers in traditional finance?)
-# --> for each initial debt level and liquidity, at the point the margin goes negative, the outstanding debt becomes worthless because it is not redeemable
-# --> therefore for margin can compute what the expected loss is as the number of protocols grows. 
+		collateralization_ratios_master = []
+		for no_of_protocols in range(1, max_number_of_protocols + 1):
+			collateralization_ratios = []
+			for i in range(1, no_of_protocols + 1):
+				collateralization_ratio = uniform(1.0, float(max_oc_requirement))
+				collateralization_ratios.append(collateralization_ratio)
+			collateralization_ratios_master.append(collateralization_ratios)
+		
+		max_levered_debt = []
+		for i, protocol_debts in enumerate(debt_shares_master):
+			for j, protocol_ratios in enumerate(collateralization_ratios_master):
+				levered_debts = []
+				if i == j:
+					for q in range(len(protocol_debts)):
+						a = protocol_debts[q]/protocol_ratios[q]
+						r = 1/protocol_ratios[q]
+						levered_debt = a/(1-r)
+						levered_debts.append(levered_debt)
+					max_levered_debt.append(levered_debts)
+					
+		total_protocol_debt = []
+		for index, debts in enumerate(max_levered_debt):
+			total_protocol_debt.append(sum(debts))
+		
+		sims[str(simulation)] = total_protocol_debt
+		
+	return sims
+
+def worst_case_per_protocol_number(sims):
+	'''
+	Taking the simulated levered debt losses, find the worst case loss for each economy size.
+	'''
+	worst_cases = []
+	number_of_protocols = len(sims['1'])
+	for index in range(number_of_protocols):
+		#List of defaults per protocol size
+		default_size = []
+		for simulation in range(1, len(sims) + 1):
+			sim_version = sims[str(simulation)]
+			economy_in_sim = sim_version[index]
+			params_in_economy = economy_in_sim.loc[30000000000][0.01]
+			default_size.append(params_in_economy)
+		index_max = max(range(len(default_size)), key=default_size.__getitem__)
+		value_max = default_size[index_max]
+		worst_cases.append(value_max)
+
+	df = pd.DataFrame(worst_cases)
+	df.index +=1
+	return df
