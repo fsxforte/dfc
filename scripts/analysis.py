@@ -44,3 +44,6 @@ for x in np.arange(0, 0.11, 0.01):
     liquidities.append(x)
 
 plots.plot_heatmap(debt_levels = debts, liquidity_levels = liquidities, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol)
+
+#9. Get sim results (free-standing)
+sim_results = simulation.crash_simulator(simulations = price_simulations, initial_debt=23000000000, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = 0.01)

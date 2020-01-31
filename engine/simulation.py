@@ -178,11 +178,26 @@ def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralizatio
 
 	return sims
 
-# def undercollateralized_debt(price_simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
-# 	'''
-# 	For each simulation extract the amount of debt that is undercollateralized when the margin goes negative.
-# 	'''
-# 	sim_results = crash_simulator(simulations = price_simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup)
+def undercollateralized_debt(sim_results):
+	'''
+	For each simulation extract the amount of debt that is undercollateralized when the margin goes negative.
+	'''
+	for simulation in range(1, len(sim_results) + 1):
+		total_margins = sim_results[str(simulation)][0]
+		debts = sim_results[str(simulation)][1]
+
+		negative_margins = []
+		#Loop through margins to find the first negative one
+		for index, margin in enumerate(total_margins):
+			if margin < 0:
+				negative_margins.append(index)
+
+		if len negative_margins > 0:
+			first_negative_margin = negative_margins[0]
+		else first_negative_margin = None
+
+
+
 
 #Logic
 #Money multiplier of 3 means for every USD borrowed, 3 more are created in additional defi lending protocols
