@@ -137,7 +137,7 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     ax2.legend(lines + lines2, labels + labels2, loc=0)
 
     plt.title('ETH/USD and MKR/USD close prices', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.png', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_monte_carlo_simulations(price_simulations):
     '''
@@ -153,7 +153,7 @@ def plot_monte_carlo_simulations(price_simulations):
     plt.title('ETH/USD: 1000 Monte Carlo Simulations', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
     ax.get_legend().remove()
-    fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.pdf', bbox_inches = 'tight', dpi = 600)
 
     ##MKR
     sims = simulation.asset_extractor_from_sims(price_simulations, 1)
@@ -165,7 +165,7 @@ def plot_monte_carlo_simulations(price_simulations):
     plt.title('MKR/USD: 1000 Monte Carlo Simulations', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
     ax.get_legend().remove()
-    fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.png', bbox_inches = 'tight', dpi = 600)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.pdf', bbox_inches = 'tight', dpi = 600)
 
 def plot_worst_simulation(price_simulations):
 	'''
@@ -190,7 +190,7 @@ def plot_worst_simulation(price_simulations):
 	ax.tick_params(axis='both', which='major', labelsize=14)
 	plt.title('The co-evolution of the ETH and MKR price', fontsize = 14)
 	ax.set_xlabel('Time steps (days)', fontsize = 14)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.png', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.pdf', bbox_inches = 'tight', dpi = 600)
 
 def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
     '''
@@ -259,7 +259,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.png', dpi = 600, bbox_inches='tight')
+    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.pdf', dpi = 600, bbox_inches='tight')
 
 def plot_heatmap(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
 	'''
@@ -296,7 +296,7 @@ def plot_heatmap(debt_levels, liquidity_levels, price_simulations, initial_eth_v
 	ax.tick_params(axis='both', which='major', labelsize=18)
 	plt.xticks(rotation=90)
 	ax.figure.axes[-1].yaxis.label.set_size(18)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.png', dpi = 600, bbox_inches='tight')
+	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.pdf', dpi = 600, bbox_inches='tight')
 
 def plot_worst_economy_outcomes(df, collateralization_ratio):
 	'''
@@ -309,7 +309,7 @@ def plot_worst_economy_outcomes(df, collateralization_ratio):
 	ax.set_xlabel('Number of additional protocols', fontsize = 18)
 	fig.suptitle('Financial losses with composable protocols', fontsize = 20)
 	ax.tick_params(axis='both', which='major', labelsize=18)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.png', dpi = 600, bbox_inches='tight')
+	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.df', dpi = 600, bbox_inches='tight')
 
 
 def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, number_of_simulations, oc_levels):
@@ -328,4 +328,4 @@ def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, numb
 	ax[0].set_xlabel('Number of additional protocols', fontsize = 14)
 	fig.suptitle('Financial losses with composable protocols', fontsize = 18)
 	#fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/protocol_defaults.png', dpi = 600, bbox_inches='tight')
+	fig.savefig('../5d8dd7887374be0001c94b71/images/protocol_defaults.pdf', dpi = 600, bbox_inches='tight')

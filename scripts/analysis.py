@@ -21,6 +21,7 @@ crash_df = get_data.create_close_df()[start_crisis:end_crisis]
 
 #3. Extract the ETH volume at the start of the crash
 initial_eth_vol = get_data.liquidity_on_date(token = 'ETH', start_date_data = START_DATE_DATA, end_date_data = END_DATE_DATA, date_of_interest = start_crisis)
+#initial_eth_vol = 
 
 #4. Using dataframe for crash period, perform Monte Carlo simulation
 price_simulations = simulation.multivariate_monte_carlo(crash_df, NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT)
