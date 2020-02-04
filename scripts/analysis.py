@@ -9,24 +9,32 @@ from engine import get_data, plots, simulation
 from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUIDITIES, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, OC_LEVELS
 
 START_DATE_DATA = dt.datetime(2018,1,1) # First data for MKR token
-END_DATE_DATA = dt.datetime(2018,6,1)
+#END_DATE_DATA = dt.datetime(2018,6,1)
+END_DATE_DATA = dt.datetime.now()
 
 sns.set(style="darkgrid")
 
+###THE LIQUIDITY ISSUE IS THE BIG ONE. HOW MUCH ETH/DAI and MKR/DAI can be traded?
+###Coingecko just pulling in volume!
+
 #1. Get times corresponding to high and low of ETH price
-start_crisis, end_crisis = get_data.get_crisis_endpoints(start_date = START_DATE_DATA, end_date = END_DATE_DATA)
+#start_crisis, end_crisis = get_data.get_crisis_endpoints(start_date = START_DATE_DATA, end_date = END_DATE_DATA)
 
 #2. Make dataframe of close prices for the crash period
-crash_df = get_data.create_close_df()[start_crisis:end_crisis]
+#crash_df = get_data.create_close_df()[start_crisis:end_crisis]
+crash_df = get_data.create_close_df()[START_DATE_DATA:END_DATE_DATA]
 
 #3. Extract the ETH volume at the start of the crash
-initial_eth_vol = get_data.liquidity_on_date(token = 'ETH', start_date_data = START_DATE_DATA, end_date_data = END_DATE_DATA, date_of_interest = start_crisis)
-#initial_eth_vol = 
+#initial_eth_vol = get_data.liquidity_on_date(token = 'ETH', start_date_data = START_DATE_DATA, end_date_data = END_DATE_DATA, date_of_interest = start_crisis)
+initial_eth_vol = get_data.coingecko_volumes('ETH')
+
+#4. Find the worst 1% of shocks
+log_rets = get_data.create_logrets_df()[START_DATE_DATA:END_DATE_DATA]
 
 #4. Using dataframe for crash period, perform Monte Carlo simulation
-price_simulations = simulation.multivariate_monte_carlo(crash_df, NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT)
+price_simulations = simulation.multivariate_monte_carlo(historical_prices = crash_df, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, length_of_crash = 1)
 
-#5. Plot the simulated ETH and MKR prices
+#5. Plot the simulated prices
 plots.plot_monte_carlo_simulations(price_simulations)
 
 #6. Plot the worst (joint) path

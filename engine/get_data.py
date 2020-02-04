@@ -209,11 +209,79 @@ def liquidity_on_date(token: str, start_date_data: dt.datetime, end_date_data: d
     vol = df.loc[date_of_interest]['volumefrom']
     return vol
 
-def extract_index_of_worst_sim(price_simulations):
+def extract_index_of_worst_eth_sim(price_simulations):
 	'''
 	Find which of the simulator runs resulted in the lowest ETH price at the end. 
 	:price_simulations: data from the Monte Carlo simulations. 
 	'''
-	sims_eth = simulation.asset_extractor_from_sims(price_simulations, 0)
+	index = TOKEN_BASKET.index('ETH')
+	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
 	df_eth = pd.DataFrame(sims_eth)
 	return df_eth.iloc[-1].nsmallest(1).index
+
+def get_coingecko_data(symbol: str):
+	'''
+	Retrieve coin data from CoinGecko.
+	See https://www.coingecko.com/api/documentations/v3#/coins/get_coins__id__market_chart_range
+	for more information.
+	:symbol: base symbol, e.g. 'dai'
+	'''
+	api_endpoint = 'https://api.coingecko.com/api/v3/coins/' + symbol
+
+	return requests.get(url=api_endpoint)
+
+def coingecko_volumes(token: str, volume_unit: str = None):
+	'''
+	Take raw output from coingecko and extract volume information for each token, returning total 24 hour volume. 
+	:coingecko_data_payload: coingecko data payload returned from API.
+	:token: token of interest, e.g. 'USDC', 'BAT', 'ETH'
+	:volume_unit: unit for the volumes, default is native token but can be returned in DAI by passing 'DAI'
+	'''
+
+	coingecko_data_payload = get_coingecko_data('dai')
+	tickers = coingecko_data_payload.json()['tickers']
+	df = pd.DataFrame(tickers)
+
+	df = df[df['is_stale'] == False]
+
+	##Where DAI is base
+	df_dai_base = df[(df['base'] == 'DAI') & (df['target'] == token)]
+
+	#Volume in DAI
+	df_dai_base_vol_dai = df_dai_base['volume'].sum()
+
+	#Volume in token
+	df_dai_base_vol_token_helper = df_dai_base['volume']*df_dai_base['last']
+	df_dai_base_vol_token = df_dai_base_vol_token_helper.sum()
+
+	##Where DAI is target
+	df_dai_target = df[(df['target'] == 'DAI') & (df['base'] == token)]
+
+	#Volume in DAI
+	df_dai_target_vol_dai_helper = df_dai_target['volume'] * df_dai_target['last']
+	df_dai_target_vol_dai = df_dai_target_vol_dai_helper.sum()
+
+	#Volume in token
+	df_dai_target_vol_token = df_dai_target['volume'].sum()
+
+	##Overall totals
+	dai_vols = df_dai_base_vol_dai + df_dai_target_vol_dai
+	token_vols = df_dai_base_vol_token + df_dai_target_vol_token
+
+	if volume_unit == 'DAI':
+		return dai_vols
+	else:
+		return token_vols
+
+def get_liquidities(token_basket):
+	'''
+	Extract liquidities for all tokens in basket.
+	'''
+	liquidity_dict = {}
+	for token in token_basket:
+		liquidity_dict[token] = coingecko_volumes(token = token)
+	return liquidity_dict
+
+
+
+#Remember to change volumes to liquities!!!! From coingecko

@@ -10,11 +10,12 @@ from random import uniform
 from engine import get_data
 from engine import kernel_estimation
 
-def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
+def multivariate_monte_carlo(historical_prices, length_of_crash, num_simulations, T, dt):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
 	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
 	:historical_prices: dataframe where columns are assets and rows are time
+	:length_of_crash: number of days the worst ETH shock (-22.45\%) occurs
 	:num_simulations: number of runs of simulation to perform. 
 	:T: length of time prediction horizon (in units of dt, i.e. days)
 	:dt: time increment, i.e. frequency of data (using daily data here)
@@ -31,8 +32,8 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	#Parameter assignment
 
 	#Initial asset price
-	S0 = historical_prices.iloc[0]
-	#S0 = historical_prices.iloc[-1]
+	#S0 = historical_prices.iloc[0]
+	S0 = historical_prices.iloc[-1]
 
 	#Mean log return
 	mu = np.mean(log_returns)
@@ -73,8 +74,17 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	#Drift should grow linearly
 	drift = {}
 	for simulation in range(1, num_simulations + 1):
-		drift[str(simulation)] = [(mu - 0.5 * sigma**2)[asset]*t for asset in range(len(S0))]
-
+		drift[str(simulation)] = []
+		for asset in range(len(S0)):
+			drift_array = []
+			for time_period in t:
+				if time_period < (length_of_crash + 1):
+					drift_array.append((-0.22 - 0.5 * sigma**2)[asset]*time_period)
+				else:
+					drift_array.append((mu - 0.5 * sigma**2)[asset]*time_period + (length_of_crash*-0.22))
+			
+			drift[str(simulation)].append(drift_array)
+				
 	#Diffusion
 	diffusion = {}
 	for simulation in range(1, num_simulations + 1):
@@ -101,12 +111,12 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	
 	return asset_sims
 
-def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
+def crash_simulator(simulations, initial_debt, initial_liquidities, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:simulations: monte carlo simulations of correlated price movements
 	:initial_debt: amount of initial system debt
-	:initial_eth_vol: maximum liquidity supportable by market at start of crash, decays exponentially
+	:initial_liquidities: maximum liquidity supportable by markets at start of crash
 	:collateralization_ratio: system collateralization ratio
     '''
 	sims = {}

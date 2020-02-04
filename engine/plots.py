@@ -114,7 +114,7 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     ax = fig.add_subplot(111)
 
     #ETH data
-    df = get_data.create_df(TOKEN_BASKET[0], 'USD')
+    df = get_data.create_df('ETH', 'USD')
     df = df[start_date:end_date]
     ax.plot(df.index, df['close'], label = 'ETH/USD', color = 'k')
     ax.set_ylabel(TOKEN_BASKET[0] + '/USD price', fontsize = 14)
@@ -123,7 +123,7 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     ax.set_xlabel('')
 
     #MKR data
-    df = get_data.create_df(TOKEN_BASKET[1], 'USD')
+    df = get_data.create_df('MKR', 'USD')
     df = df[start_date:end_date]
     ax2 = ax.twinx()
     ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r')
@@ -140,57 +140,54 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_monte_carlo_simulations(price_simulations):
-    '''
-    Plot the ETH and MKR simulated outcomes
-    '''
-    ##ETH
-    sims = simulation.asset_extractor_from_sims(price_simulations, 0)
-    df = pd.DataFrame(sims)
-    fig, ax = plt.subplots()
-    df.plot(ax=ax)
-    ax.set_ylabel('ETH/USD', fontsize = 14)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    plt.title('ETH/USD: 1000 Monte Carlo Simulations', fontsize = 14)
-    ax.set_xlabel('Time steps (days)', fontsize = 14)
-    ax.get_legend().remove()
-    fig.savefig('../5d8dd7887374be0001c94b71/images/eth_monte_carlo.pdf', bbox_inches = 'tight', dpi = 600)
-
-    ##MKR
-    sims = simulation.asset_extractor_from_sims(price_simulations, 1)
-    df = pd.DataFrame(sims)
-    fig, ax = plt.subplots()
-    df.plot(ax=ax)
-    ax.set_ylabel('MKR/USD', fontsize = 14)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    plt.title('MKR/USD: 1000 Monte Carlo Simulations', fontsize = 14)
-    ax.set_xlabel('Time steps (days)', fontsize = 14)
-    ax.get_legend().remove()
-    fig.savefig('../5d8dd7887374be0001c94b71/images/mkr_monte_carlo.pdf', bbox_inches = 'tight', dpi = 600)
+	'''
+	Plot the simulated prices.
+	:price_simulations: input from the Monte Carlo simulator
+	'''
+	for token in TOKEN_BASKET:
+		index = TOKEN_BASKET.index(token)
+		sims = simulation.asset_extractor_from_sims(price_simulations, index)
+		df = pd.DataFrame(sims)
+		fig, ax = plt.subplots()
+		df.plot(ax=ax)
+		ax.set_ylabel(token + '/USD', fontsize = 14)
+		ax.tick_params(axis='both', which='major', labelsize=14)
+		plt.title(token + '/USD: ' + str(NUM_SIMULATIONS) + ' Monte Carlo Simulations', fontsize = 14)
+		ax.set_xlabel('Time steps (days)', fontsize = 14)
+		ax.get_legend().remove()
+		fig.savefig('../5d8dd7887374be0001c94b71/images/' + token + '_monte_carlo.pdf', bbox_inches = 'tight')
 
 def plot_worst_simulation(price_simulations):
 	'''
-	Plot the behaviour of the ETH price and the MKR price for the worst outcome from monte carlo.
+	Plot the behaviour of the ETH price and the other token prices for the worst outcome from Monte Carlo.
 	'''
-	sims_eth = simulation.asset_extractor_from_sims(price_simulations, 0)
+	#Find the worst ETH outcome
+	index = TOKEN_BASKET.index('ETH')
+	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
 	df_eth = pd.DataFrame(sims_eth)
-	worst_eth_outcome = get_data.extract_index_of_worst_sim(price_simulations)
+	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
 	worst_eth = df_eth.loc[:, worst_eth_outcome]
-	worst_eth = worst_eth.rename(columns = {"13": "ETH"})
-    #Find corresponding bad MKR outcomes
-	sims_mkr = simulation.asset_extractor_from_sims(price_simulations, 1)
-	df_mkr = pd.DataFrame(sims_mkr)
-	corresponding_mkr_sims = df_mkr.loc[:, worst_eth_outcome]
-	corresponding_mkr_sims = corresponding_mkr_sims.rename(columns = {"13": "MKR"})
-	#Join and plot to see correlated movements
-	df_joined = pd.concat([worst_eth, corresponding_mkr_sims], axis = 1)
-	df_normalized = df_joined/df_joined.loc[0]
+	column_name = worst_eth.columns.values[0]
+	master_df = worst_eth.rename(columns = {column_name: "ETH"})
+
+	for token in TOKEN_BASKET:
+		#Find the corresponding simulation for the othet tokens
+		index = TOKEN_BASKET.index(token)
+		sims_other = simulation.asset_extractor_from_sims(price_simulations, index)
+		df_other = pd.DataFrame(sims_other)
+		corresponding_other_sims = df_other.loc[:, worst_eth_outcome]
+		corresponding_other_sims = corresponding_other_sims.rename(columns = {column_name: str(token)})
+		#Join and plot to see correlated movements
+		master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
+	
+	df_normalized = master_df/master_df.loc[0]
 	fig, ax = plt.subplots()
 	df_normalized.plot(ax=ax)
 	ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
 	ax.tick_params(axis='both', which='major', labelsize=14)
-	plt.title('The co-evolution of the ETH and MKR price', fontsize = 14)
+	plt.title('The co-evolution of the ETH other token prices', fontsize = 14)
 	ax.set_xlabel('Time steps (days)', fontsize = 14)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.pdf', bbox_inches = 'tight', dpi = 600)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.pdf', bbox_inches = 'tight')
 
 def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
     '''
@@ -227,13 +224,13 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
             debt_master_df_debt['Initial debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
 
         #Margin
-        debt_master_df_margin.plot(ax = ax[i], markevery = 10)
+        debt_master_df_margin.plot(ax = ax[i], markevery = 30)
         for k, line in enumerate(ax[i].get_lines()):
             line.set_marker(markers[k])
             line.set_color(colors[k])
 
         #Debt
-        debt_master_df_debt.plot(ax = ax[i], style = '--', markevery = 10)
+        debt_master_df_debt.plot(ax = ax[i], style = '--', markevery = 30)
         for k, line in enumerate(ax[i].get_lines()[len(debt_master_df_margin.columns):]):
             line.set_marker(markers[k])
             line.set_color(colors[k])
