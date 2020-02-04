@@ -281,7 +281,3 @@ def get_liquidities(token_basket):
 	for token in token_basket:
 		liquidity_dict[token] = coingecko_volumes(token = token)
 	return liquidity_dict
-
-
-
-#Remember to change volumes to liquities!!!! From coingecko

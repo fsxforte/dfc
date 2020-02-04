@@ -75,7 +75,6 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
 	plt.ylabel('Close price', fontsize=16)
 	plt.show()
 
-
 def plot_log_returns(start_date: dt.datetime, end_date: dt.datetime):
 	df = analysis.make_logreturns_matrix()
 	df = df[start_date:end_date]
@@ -197,12 +196,12 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     markers = ['s', 'p', 'v',]
     colors = ['g', 'k', 'r']
     fig, ax = plt.subplots(1, 4, figsize=(18,8))
-    worst_eth_outcome = get_data.extract_index_of_worst_sim(price_simulations)
+    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
     for i, debt in enumerate(debt_levels):
         debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
         debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
         for liquidity in liquidity_levels:
-            system_simulations = simulation.crash_simulator(simulations = price_simulations, initial_debt = debt, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity)
+            system_simulations = simulation.crash_simulator(simulations = price_simulations, initial_debt = debt, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity, token_basket = TOKEN_BASKET)
             
             #Reconstruct dictionaries for margin and dai liability separately
             margin_simulations = {}
@@ -236,7 +235,8 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
             line.set_color(colors[k])
 
         #Graph polish
-        ax[i].set_title('Initial debt: ' + str(f'{debt:,}'), fontsize = 10.5)
+		debt_scale = debt / 100000000
+        ax[i].set_title('Initial debt: ' + str(f'{debt_scale:,}') + 'x', fontsize = 10.5)
         ax[i].tick_params(axis='both', which='major', labelsize=14)
 
         #Shading
@@ -248,7 +248,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
         else:
             handles, labels = ax[i].get_legend_handles_labels()
             extra = Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-            fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Liquidity: '+ str(liquidity_levels[0]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidity_levels[1]), 'Margin', 'Remaining debt', 'Liquidity: '+ str(liquidity_levels[2]), 'Margin', 'Remaining debt'], loc = 'lower center', ncol=3, borderaxespad=0., fontsize = 14)#, bbox_to_anchor=(0.5,-0.0005))
+            fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Constant liquidity', 'Margin', 'Remaining debt', 'Illiquidity: '+ str(liquidity_levels[1]), 'Margin', 'Remaining debt', 'Illiquidity: '+ str(liquidity_levels[2]), 'Margin', 'Remaining debt'], loc = 'lower center', ncol=3, borderaxespad=0., fontsize = 14)#, bbox_to_anchor=(0.5,-0.0005))
             ax[i].get_legend().remove()
 
     fig.subplots_adjust(bottom=0.2) 
@@ -258,30 +258,34 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
     fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.pdf', dpi = 600, bbox_inches='tight')
 
-def plot_heatmap(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
+def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol):
 	'''
 	Plot heatmap of days until negative margin for debt and liquidity levels. 
 	'''
-	worst_eth_outcome = get_data.extract_index_of_worst_sim(price_simulations)
-	df_pairs = pd.DataFrame(index = debt_levels, columns = liquidity_levels)
+	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
+	df_pairs = pd.DataFrame(index = debt_levels, columns = liquidity_params)
 	
 	for i in debt_levels:
-		for j in liquidity_levels:
-			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = j)
-            #Reconstruct dictionaries for margin and dai liability separately
+		for j in liquidity_params:
+			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = j, token_basket = TOKEN_BASKET)
+			#Reconstruct dictionaries for margin and dai liability separately
 			margin_simulations = {}
 			for x in range(1, NUM_SIMULATIONS+1):
 				margin_simulations[str(x)] = all_sims[str(x)][0]
 
 			worst_margin_path = margin_simulations[worst_eth_outcome.values[0]]
 
-            #Find the first day gone negative
+			#Find the first day gone negative
 			negative_days = []
 			for index, margin in enumerate(worst_margin_path):
 				if margin < 0:
 					negative_days.append(index)
 					first_negative_day = negative_days[0]
 					df_pairs.loc[int(i)][float(j)] = first_negative_day
+				#else:
+				#	df_pairs.loc[int(i)][float(j)] = 0
+
+	print(df_pairs)
 
 	df_pairs_clean = df_pairs.dropna()
 	sns.set(font_scale=1.4)
@@ -293,7 +297,48 @@ def plot_heatmap(debt_levels, liquidity_levels, price_simulations, initial_eth_v
 	ax.tick_params(axis='both', which='major', labelsize=18)
 	plt.xticks(rotation=90)
 	ax.figure.axes[-1].yaxis.label.set_size(18)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative.pdf', dpi = 600, bbox_inches='tight')
+	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative_params.pdf', bbox_inches='tight')
+
+def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols):
+	'''
+	Plot heatmap of days until negative margin for debt and liquidity levels. 
+	'''
+	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
+	df_pairs = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
+	
+	for i in debt_levels:
+		for j in initial_eth_vols:
+			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = j, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity_param, token_basket = TOKEN_BASKET)
+			#Reconstruct dictionaries for margin and dai liability separately
+			margin_simulations = {}
+			for x in range(1, NUM_SIMULATIONS+1):
+				margin_simulations[str(x)] = all_sims[str(x)][0]
+
+			worst_margin_path = margin_simulations[worst_eth_outcome.values[0]]
+
+			#Find the first day gone negative
+			negative_days = []
+			for index, margin in enumerate(worst_margin_path):
+				if margin < 0:
+					negative_days.append(index)
+					first_negative_day = negative_days[0]
+					df_pairs.loc[int(i)][float(j)] = first_negative_day
+				#else:
+				#	df_pairs.loc[int(i)][float(j)] = 0
+
+	print(df_pairs)
+
+	df_pairs_clean = df_pairs.dropna()
+	sns.set(font_scale=1.4)
+	fig, ax = plt.subplots(1,1, figsize=(10,8))
+	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r')
+	ax.set_ylabel('Debt (USD)', fontsize = 18)
+	ax.set_xlabel('Liquidity parameter', fontsize = 18)
+	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
+	ax.tick_params(axis='both', which='major', labelsize=18)
+	plt.xticks(rotation=90)
+	ax.figure.axes[-1].yaxis.label.set_size(18)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative_vols.pdf', bbox_inches='tight')
 
 def plot_worst_economy_outcomes(df, collateralization_ratio):
 	'''

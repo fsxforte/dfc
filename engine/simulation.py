@@ -10,12 +10,13 @@ from random import uniform
 from engine import get_data
 from engine import kernel_estimation
 
-def multivariate_monte_carlo(historical_prices, length_of_crash, num_simulations, T, dt):
+def multivariate_monte_carlo(historical_prices, length_of_crash, shock_size, num_simulations, T, dt):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
 	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
 	:historical_prices: dataframe where columns are assets and rows are time
 	:length_of_crash: number of days the worst ETH shock (-22.45\%) occurs
+	:shock_size: size of worst eth shock
 	:num_simulations: number of runs of simulation to perform. 
 	:T: length of time prediction horizon (in units of dt, i.e. days)
 	:dt: time increment, i.e. frequency of data (using daily data here)
@@ -79,7 +80,7 @@ def multivariate_monte_carlo(historical_prices, length_of_crash, num_simulations
 			drift_array = []
 			for time_period in t:
 				if time_period < (length_of_crash + 1):
-					drift_array.append((-0.22 - 0.5 * sigma**2)[asset]*time_period)
+					drift_array.append((shock_size - 0.5 * sigma**2)[asset]*time_period)
 				else:
 					drift_array.append((mu - 0.5 * sigma**2)[asset]*time_period + (length_of_crash*-0.22))
 			
@@ -111,7 +112,7 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	
 	return asset_sims
 
-def crash_simulator(simulations, initial_debt, initial_liquidities, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
+def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup, token_basket):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:simulations: monte carlo simulations of correlated price movements
@@ -121,8 +122,10 @@ def crash_simulator(simulations, initial_debt, initial_liquidities, collateraliz
     '''
 	sims = {}
 	for simulation in range(1, len(simulations) + 1):
-		eth_sim_prices = simulations[str(simulation)][0]
-		mkr_sim_prices = simulations[str(simulation)][1]
+		eth_index = token_basket.index('ETH')
+		eth_sim_prices = simulations[str(simulation)][eth_index]
+		mkr_index = token_basket.index('MKR')
+		mkr_sim_prices = simulations[str(simulation)][mkr_index]
 		total_margins = []
 		debts = []
 		eth_collateral = []
