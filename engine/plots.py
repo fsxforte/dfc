@@ -235,7 +235,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
             line.set_color(colors[k])
 
         #Graph polish
-		debt_scale = debt / 100000000
+        debt_scale = debt / 100000000
         ax[i].set_title('Initial debt: ' + str(f'{debt_scale:,}') + 'x', fontsize = 10.5)
         ax[i].tick_params(axis='both', which='major', labelsize=14)
 
@@ -286,11 +286,10 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
 				#	df_pairs.loc[int(i)][float(j)] = 0
 
 	print(df_pairs)
-
 	df_pairs_clean = df_pairs.dropna()
 	sns.set(font_scale=1.4)
 	fig, ax = plt.subplots(1,1, figsize=(10,8))
-	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r')
+	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params])
 	ax.set_ylabel('Debt (USD)', fontsize = 18)
 	ax.set_xlabel('Liquidity parameter', fontsize = 18)
 	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
@@ -331,9 +330,9 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
 	df_pairs_clean = df_pairs.dropna()
 	sns.set(font_scale=1.4)
 	fig, ax = plt.subplots(1,1, figsize=(10,8))
-	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r')
+	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols])
 	ax.set_ylabel('Debt (USD)', fontsize = 18)
-	ax.set_xlabel('Liquidity parameter', fontsize = 18)
+	ax.set_xlabel('Initial ETH/DAI liquidity', fontsize = 18)
 	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
 	ax.tick_params(axis='both', which='major', labelsize=18)
 	plt.xticks(rotation=90)
@@ -354,17 +353,17 @@ def plot_worst_economy_outcomes(df, collateralization_ratio):
 	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.df', dpi = 600, bbox_inches='tight')
 
 
-def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, number_of_simulations, oc_levels):
+def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, number_of_simulations, oc_levels, debt_size, liquidity_param):
 	'''
 	For a list of overcollateralization levels, plot the worst case outcomes for each economy size.
 	'''
 	fig, ax = plt.subplots(1,3, figsize=(10,4))
 	for index, oc_level in enumerate(oc_levels):
 		sims = simulation.protocol_composer(max_number_of_protocols = max_number_of_protocols, crash_debts_df = crash_debts_df, max_oc_requirement = oc_level, number_of_simulations = number_of_simulations)
-		worst_outcomes = simulation.worst_case_per_protocol_number(sims)
+		worst_outcomes = simulation.worst_case_per_protocol_number(sims, debt_size = debt_size, liquidity_param = liquidity_param)
 		worst_outcomes.plot(ax = ax[index])
 		ax[index].get_legend().remove()
-		ax[index].set_title('O/C: ' + str(oc_level), fontsize = 12)
+		ax[index].set_title('Max. O/C req.: ' + str(oc_level), fontsize = 12)
 		ax[index].tick_params(axis='both', which='major', labelsize=14)
 	ax[0].set_ylabel('Total loss (USD)', fontsize = 14)
 	ax[0].set_xlabel('Number of additional protocols', fontsize = 14)

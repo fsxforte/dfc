@@ -214,7 +214,7 @@ def undercollateralized_debt(sim_results):
 	
 	return debt_when_negative_margin
 
-def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, collateralization_ratio, quantity_reserve_asset):
+def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, token_basket):
 	'''
 	For the considered range of debts and liquidities, create a DataFrame of the debt at the point of collapse. 
 	'''
@@ -222,7 +222,7 @@ def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vo
 
 	for i in debt_levels:
 		for j in liquidity_levels:
-			sim_results = crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = collateralization_ratio, quantity_reserve_asset = quantity_reserve_asset, liquidity_dryup = j)
+			sim_results = crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = collateralization_ratio, quantity_reserve_asset = quantity_reserve_asset, liquidity_dryup = j, token_basket = token_basket)
 			debt_when_negative_margin = undercollateralized_debt(sim_results)
 			df.loc[int(i)][float(j)] = debt_when_negative_margin
 	
@@ -270,7 +270,7 @@ def protocol_composer(max_number_of_protocols, crash_debts_df, max_oc_requiremen
 		
 	return sims
 
-def worst_case_per_protocol_number(sims):
+def worst_case_per_protocol_number(sims, debt_size, liquidity_param):
 	'''
 	Taking the simulated levered debt losses, find the worst case loss for each economy size.
 	'''
@@ -282,7 +282,7 @@ def worst_case_per_protocol_number(sims):
 		for simulation in range(1, len(sims) + 1):
 			sim_version = sims[str(simulation)]
 			economy_in_sim = sim_version[index]
-			params_in_economy = economy_in_sim.loc[30000000000][0.01]
+			params_in_economy = economy_in_sim.loc[debt_size][liquidity_param]
 			default_size.append(params_in_economy)
 		index_max = max(range(len(default_size)), key=default_size.__getitem__)
 		value_max = default_size[index_max]

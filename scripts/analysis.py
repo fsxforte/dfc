@@ -54,7 +54,7 @@ for x in range(0, 20000, 2000):
 plots.plot_heatmap_initial_volumes(debt_levels = debts, liquidity_param = 0.01, price_simulations = price_simulations, initial_eth_vols = eth_vols)
 
 #11. Find the debt outstanding when market crashes
-debts_outstanding = simulation.crash_debts(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET)
+debts_outstanding = simulation.crash_debts(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, token_basket = TOKEN_BASKET)
 
 #12. Examine what the worst case is from #11 (for each economy size)
-plots.plot_protocol_universe_default(max_number_of_protocols = 30, crash_debts_df = debts_outstanding, number_of_simulations = 100, oc_levels = OC_LEVELS)
+plots.plot_protocol_universe_default(max_number_of_protocols = 30, crash_debts_df = debts_outstanding, number_of_simulations = 100, oc_levels = OC_LEVELS, debt_size = 500000000, liquidity_param = 0.01)
