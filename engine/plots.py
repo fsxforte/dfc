@@ -116,7 +116,7 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     df = get_data.create_df('ETH', 'USD')
     df = df[start_date:end_date]
     ax.plot(df.index, df['close'], label = 'ETH/USD', color = 'k')
-    ax.set_ylabel(TOKEN_BASKET[0] + '/USD price', fontsize = 14)
+    ax.set_ylabel(TOKEN_BASKET.index('ETH') + '/USD price', fontsize = 14)
     ax.tick_params(axis='both', which='major', labelsize=14)
     fig.autofmt_xdate()
     ax.set_xlabel('')
@@ -126,7 +126,7 @@ def plot_prices(start_date: dt.datetime, end_date: dt.datetime):
     df = df[start_date:end_date]
     ax2 = ax.twinx()
     ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r')
-    ax2.set_ylabel(TOKEN_BASKET[1] + '/USD price', fontsize = 14)
+    ax2.set_ylabel(TOKEN_BASKET.index('MKR') + '/USD price', fontsize = 14)
     ax2.tick_params(axis='both', which='major', labelsize=14)
     fig.autofmt_xdate()
     ax2.set_xlabel('')
@@ -236,7 +236,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
 
         #Graph polish
         debt_scale = debt / 100000000
-        ax[i].set_title('Initial debt: ' + str(f'{debt_scale:,}') + 'x', fontsize = 10.5)
+        ax[i].set_title('Initial debt: ' + str(f'{debt_scale:,}') + 'x base case', fontsize = 10.5)
         ax[i].tick_params(axis='both', which='major', labelsize=14)
 
         #Shading

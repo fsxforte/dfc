@@ -14,6 +14,9 @@ END_DATE_DATA = dt.datetime.now()
 #1. Make dataframe of close prices since 1 January 2018 for all tokens in basket
 crash_df = get_data.create_close_df()[START_DATE_DATA:END_DATE_DATA]
 
+#2. Plot ETH and MKR prices
+plots.plot_close_prices(start_date = START_DATE_DATA, end_date = END_DATE_DATA)
+
 #2. Extract the current DAI/ETH volume, use this to approximate liquidity
 initial_eth_vol = get_data.coingecko_volumes('ETH') / 2 #Assume half is selling of ETH
 
