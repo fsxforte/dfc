@@ -67,7 +67,7 @@ def plot_monte_carlo_simulations(price_simulations):
 		ax.get_legend().remove()
 		fig.savefig('../5d8dd7887374be0001c94b71/images/' + token + '_monte_carlo.pdf', bbox_inches = 'tight')
 
-def plot_worst_simulation(price_simulations):
+def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
 	'''
 	Plot the behaviour of the ETH price and the other token prices for the worst outcome from Monte Carlo.
 	'''
@@ -75,7 +75,7 @@ def plot_worst_simulation(price_simulations):
 	index = TOKEN_BASKET.index('ETH')
 	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
 	df_eth = pd.DataFrame(sims_eth)
-	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
+	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
 	worst_eth = df_eth.loc[:, worst_eth_outcome]
 	column_name = worst_eth.columns.values[0]
 	master_df = worst_eth.rename(columns = {column_name: "ETH"})
@@ -100,7 +100,7 @@ def plot_worst_simulation(price_simulations):
 	ax.set_xlabel('Time steps (days)', fontsize = 14)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.pdf', bbox_inches = 'tight')
 
-def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol):
+def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, point_evaluate_eth_price):
     '''
     Plot system simulation.
     '''
@@ -108,7 +108,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     markers = ['s', 'p', 'v',]
     colors = ['g', 'k', 'r']
     fig, ax = plt.subplots(1, 4, figsize=(18,8))
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
+    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
     for i, debt in enumerate(debt_levels):
         debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
         debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
@@ -170,11 +170,11 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
     fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.pdf', dpi = 600, bbox_inches='tight')
 
-def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol):
+def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol, point_evaluate_eth_price):
 	'''
 	Plot heatmap of days until negative margin for debt and liquidity levels. 
 	'''
-	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
+	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
 	df_pairs = pd.DataFrame(index = debt_levels, columns = liquidity_params)
 	
 	for i in debt_levels:
@@ -210,11 +210,11 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
 	ax.figure.axes[-1].yaxis.label.set_size(18)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative_params.pdf', bbox_inches='tight')
 
-def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols):
+def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, point_evaluate_eth_price):
 	'''
 	Plot heatmap of days until negative margin for debt and liquidity levels. 
 	'''
-	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations)
+	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
 	df_pairs = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
 	
 	for i in debt_levels:

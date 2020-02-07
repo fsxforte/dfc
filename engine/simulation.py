@@ -10,7 +10,7 @@ from random import uniform
 from engine import get_data
 from engine import kernel_estimation
 
-def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
+def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
 	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
@@ -48,10 +48,10 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 	#Compute covariance matrix from historical prices
 	corr_matrix = log_returns.corr()
 	cov_matrix = log_returns.cov()
-	print(cov_matrix)
+	print(corr_matrix)
 
 	#Cholesky decomposition
-	Chol = np.linalg.cholesky(cov_matrix)
+	Chol = np.linalg.cholesky(corr_matrix)
 
 	#Time index for predicted periods
 	t = np.arange(1, int(num_periods_ahead) + 1)
@@ -63,14 +63,13 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 		for asset in log_returns.columns:
 			random_sequence = []
 			for period in range(num_periods_ahead):
-				#random_sequence.append(np.random.normal(0, 1))
-				random_sequence.append(log_returns[asset].sample(1).values[0])
+				random_sequence.append(np.random.normal(0, 1))
 			sim.append(random_sequence)
 		b[str(simulation)] = sim
 
 	#Correlate them with Cholesky
 	b_corr = {str(simulation): Chol.dot(b[str(simulation)]) for simulation in range(1, num_simulations + 1)}
-
+	
 	#Cumulate the shocks
 	#W is keyed by simulations, within which rows correspond to assets and columns to periods ahead
 	W = {}
@@ -88,10 +87,85 @@ def multivariate_monte_carlo(historical_prices, num_simulations, T, dt):
 			drift = (mu[asset] - 0.5 * (sigma[asset]**2)) * t
 
 			#Calculate Diffusion
-			diffusion = W[str(simulation)][asset]# * sigma[asset]
+			diffusion = W[str(simulation)][asset]  * sigma[asset]
 
 			#Make predictions
-			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion))#+drift))
+			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion+drift))
+
+			sim.append(predicted_path)	
+
+		simulations[str(simulation)] = sim
+
+	return simulations
+
+
+def multivariate_monte_carlo_historical(historical_prices, num_simulations, T, dt):
+	'''
+	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
+	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
+	:historical_prices: dataframe where columns are assets and rows are time
+	:length_of_crash: number of days the worst ETH shock (-22.45\%) occurs
+	:shock_size: size of worst eth shock
+	:num_simulations: number of runs of simulation to perform. 
+	:T: length of time prediction horizon (in units of dt, i.e. days)
+	:dt: time increment, i.e. frequency of data (using daily data here)
+	'''
+	#Set seed to ensure same simulation run
+	np.random.seed(137)
+
+	num_periods_ahead = int(T / dt)
+
+	#From prices, calculate log returns
+	log_returns = np.log(historical_prices) - np.log(historical_prices.shift(1))
+	log_returns = log_returns.dropna()
+
+	#Mean log return
+	mu = np.mean(log_returns)
+	print('mu: ' + str(mu))
+
+	#Standard deviation of log return
+	sigma = np.std(log_returns)
+	print('sigma: ' + str(sigma))
+	#Diagonal sigmas
+	#sd = np.diag(sigma)
+
+	#Time index for predicted periods
+	t = np.arange(1, int(num_periods_ahead) + 1)
+
+	#Initial asset price
+	S0 = historical_prices.iloc[-1]
+
+	b = {}
+	for simulation in range(1, num_simulations + 1):
+		sim = []
+		for asset in log_returns.columns:
+			random_sequence = []
+			for period in range(num_periods_ahead):
+				random_sequence.append(log_returns[asset].sample(1).values[0])
+			sim.append(random_sequence)
+		b[str(simulation)] = sim
+	
+	#Cumulate the shocks
+	#W is keyed by simulations, within which rows correspond to assets and columns to periods ahead
+	W = {}
+	for simulation in range(1, num_simulations + 1):
+		W[str(simulation)] = [np.cumsum(b[str(simulation)][asset]) for asset in range(len(S0))]
+
+	simulations = {}
+	for simulation in range(1, num_simulations + 1):
+
+		sim = []
+
+		for asset in range(len(S0)):
+			
+			#Calculate drift
+			drift = (mu[asset] - 0.5 * (sigma[asset]**2)) * t
+
+			#Calculate Diffusion
+			diffusion = W[str(simulation)][asset]
+
+			#Make predictions
+			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion+drift))
 
 			sim.append(predicted_path)	
 

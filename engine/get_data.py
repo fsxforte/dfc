@@ -209,15 +209,16 @@ def liquidity_on_date(token: str, start_date_data: dt.datetime, end_date_data: d
     vol = df.loc[date_of_interest]['volumefrom']
     return vol
 
-def extract_index_of_worst_eth_sim(price_simulations):
+def extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price):
 	'''
 	Find which of the simulator runs resulted in the lowest ETH price at the end. 
-	:price_simulations: data from the Monte Carlo simulations. 
+	:price_simulations: data from the Monte Carlo simulations.
+	:period: which time period to extract the worst ETH price from.
 	'''
 	index = TOKEN_BASKET.index('ETH')
 	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
 	df_eth = pd.DataFrame(sims_eth)
-	return df_eth.iloc[-1].nsmallest(1).index
+	return df_eth.iloc[point_evaluate_eth_price].nsmallest(1).index
 
 def get_coingecko_data(symbol: str):
 	'''
