@@ -52,6 +52,7 @@ def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt):
 
 	#Cholesky decomposition
 	Chol = np.linalg.cholesky(corr_matrix)
+	#Chol = np.linalg.cholesky(cov_matrix)
 
 	#Time index for predicted periods
 	t = np.arange(1, int(num_periods_ahead) + 1)

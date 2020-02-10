@@ -37,12 +37,9 @@ plots.plot_worst_simulation(price_simulations_normal, point_evaluate_eth_price =
 plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = initial_eth_vol, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
 #plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_historical, initial_eth_vol = initial_eth_vol, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
 
-
-##Up to here in cleanup
-
 #8. Plot heatmap for debt vs liquidity dry-up
 debts = []
-for x in range(0, 400000000, 50000000):
+for x in range(400000000, 800000000, 50000000):
     debts.append(x)
 
 liquidities = []
@@ -61,7 +58,7 @@ plots.plot_heatmap_initial_volumes(debt_levels = debts, liquidity_param = 0.01, 
 #plots.plot_heatmap_initial_volumes(debt_levels = debts, liquidity_param = 0.01, price_simulations = price_simulations_historical, initial_eth_vols = eth_vols, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
 
 #10. Find the debt outstanding when market crashes
-debts_outstanding = simulation.crash_debts(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, token_basket = TOKEN_BASKET)
+debts_outstanding = simulation.crash_debts(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, token_basket = TOKEN_BASKET)
 
 #11. Examine what the worst case is from #11 (for each economy size)
-plots.plot_protocol_universe_default(max_number_of_protocols = 30, crash_debts_df = debts_outstanding, number_of_simulations = 100, oc_levels = OC_LEVELS, debt_size = 500000000, liquidity_param = 0.01)
+plots.plot_protocol_universe_default(max_number_of_protocols = 30, crash_debts_df = debts_outstanding, number_of_simulations = 100, oc_levels = OC_LEVELS, debt_size = 400000000, liquidity_param = 0.01)

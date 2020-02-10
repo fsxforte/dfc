@@ -26,7 +26,7 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
     #ETH data
     df = get_data.create_df('ETH', 'USD')
     df = df[start_date:end_date]
-    ax.plot(df.index, df['close'], label = 'ETH/USD', color = 'k')
+    ax.plot(df.index, df['close'], label = 'ETH/USD', color = 'k', rasterized = True)
     ax.set_ylabel('ETH/USD price', fontsize = 14)
     ax.tick_params(axis='both', which='major', labelsize=14)
     fig.autofmt_xdate()
@@ -36,7 +36,7 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
     df = get_data.create_df('MKR', 'USD')
     df = df[start_date:end_date]
     ax2 = ax.twinx()
-    ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r')
+    ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r', rasterized = True)
     ax2.set_ylabel('MKR/USD price', fontsize = 14)
     ax2.tick_params(axis='both', which='major', labelsize=14)
     fig.autofmt_xdate()
@@ -59,7 +59,7 @@ def plot_monte_carlo_simulations(price_simulations):
 		sims = simulation.asset_extractor_from_sims(price_simulations, index)
 		df = pd.DataFrame(sims)
 		fig, ax = plt.subplots()
-		df.plot(ax=ax)
+		df.plot(ax=ax, rasterized = True)
 		ax.set_ylabel(token + '/USD', fontsize = 14)
 		ax.tick_params(axis='both', which='major', labelsize=14)
 		plt.title(token + '/USD: ' + str(NUM_SIMULATIONS) + ' Monte Carlo Simulations', fontsize = 14)
@@ -93,7 +93,7 @@ def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
 	
 	df_normalized = master_df/master_df.loc[0]
 	fig, ax = plt.subplots()
-	df_normalized.plot(ax=ax)
+	df_normalized.plot(ax=ax, rasterized = True)
 	ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
 	ax.tick_params(axis='both', which='major', labelsize=14)
 	plt.title('The co-evolution of the ETH other token prices', fontsize = 14)
@@ -135,7 +135,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
             debt_master_df_debt['Initial debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
 
         #Margin
-        debt_master_df_margin.plot(ax = ax[i], markevery = 30)
+        debt_master_df_margin.plot(ax = ax[i], markevery = 30, rasterized = True)
         for k, line in enumerate(ax[i].get_lines()):
             line.set_marker(markers[k])
             line.set_color(colors[k])
@@ -198,10 +198,10 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
 				#	df_pairs.loc[int(i)][float(j)] = 0
 
 	print(df_pairs)
-	df_pairs_clean = df_pairs.dropna()
+	mask = df_pairs.isnull()
 	sns.set(font_scale=1.4)
 	fig, ax = plt.subplots(1,1, figsize=(10,8))
-	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params])
+	sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params], rasterized = True)
 	ax.set_ylabel('Debt (USD)', fontsize = 18)
 	ax.set_xlabel('Liquidity parameter', fontsize = 18)
 	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
@@ -239,10 +239,10 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
 
 	print(df_pairs)
 
-	df_pairs_clean = df_pairs.dropna()
+	mask = df_pairs.isnull()
 	sns.set(font_scale=1.4)
 	fig, ax = plt.subplots(1,1, figsize=(10,8))
-	sns.heatmap(df_pairs_clean.astype(float), ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols])
+	sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
 	ax.set_ylabel('Debt (USD)', fontsize = 18)
 	ax.set_xlabel('Initial ETH/DAI liquidity', fontsize = 18)
 	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
@@ -256,7 +256,7 @@ def plot_worst_economy_outcomes(df, collateralization_ratio):
 	Plot the worst case economy outcomes when protocols are composed. 
 	'''
 	
-	df.plot(ax = ax)
+	df.plot(ax = ax, rasterized = True)
 	ax.get_legend().remove()
 	ax.set_ylabel('Loss (USD)', fontsize = 18)
 	ax.set_xlabel('Number of additional protocols', fontsize = 18)
