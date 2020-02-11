@@ -47,7 +47,7 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
     ax2.legend(lines + lines2, labels + labels2, loc=0)
 
     plt.title('ETH/USD and MKR/USD close prices', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight')
 
 def plot_monte_carlo_simulations(price_simulations):
 	'''
@@ -76,6 +76,7 @@ def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
 	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
 	df_eth = pd.DataFrame(sims_eth)
 	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
+	print(worst_eth_outcome)
 	worst_eth = df_eth.loc[:, worst_eth_outcome]
 	column_name = worst_eth.columns.values[0]
 	master_df = worst_eth.rename(columns = {column_name: "ETH"})
@@ -109,6 +110,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     colors = ['g', 'k', 'r']
     fig, ax = plt.subplots(1, 4, figsize=(18,8))
     worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
+    print(worst_eth_outcome)
     for i, debt in enumerate(debt_levels):
         debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
         debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
@@ -148,7 +150,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
 
         #Graph polish
         debt_scale = debt / 100000000
-        ax[i].set_title('Initial debt: ' + str(f'{debt_scale:,}') + 'x base case', fontsize = 10.5)
+        ax[i].set_title('Initial debt: ' + str(f'{debt:,}'), fontsize = 10.5)
         ax[i].tick_params(axis='both', which='major', labelsize=14)
 
         #Shading
@@ -168,7 +170,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.pdf', dpi = 600, bbox_inches='tight')
+    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.pdf', bbox_inches='tight')
 
 def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol, point_evaluate_eth_price):
 	'''
@@ -262,23 +264,23 @@ def plot_worst_economy_outcomes(df, collateralization_ratio):
 	ax.set_xlabel('Number of additional protocols', fontsize = 18)
 	fig.suptitle('Financial losses with composable protocols', fontsize = 20)
 	ax.tick_params(axis='both', which='major', labelsize=18)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.df', dpi = 600, bbox_inches='tight')
+	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.df', bbox_inches='tight')
 
 
-def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, number_of_simulations, oc_levels, debt_size, liquidity_param):
+def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, oc_levels, debt_size, liquidity_param):
 	'''
 	For a list of overcollateralization levels, plot the worst case outcomes for each economy size.
 	'''
-	fig, ax = plt.subplots(1,3, figsize=(10,4))
+	fig, ax = plt.subplots(1,3, figsize=(10,5))
 	for index, oc_level in enumerate(oc_levels):
-		sims = simulation.protocol_composer(max_number_of_protocols = max_number_of_protocols, crash_debts_df = crash_debts_df, max_oc_requirement = oc_level, number_of_simulations = number_of_simulations)
+		sims = simulation.protocol_composer(max_number_of_protocols = max_number_of_protocols, crash_debts_df = crash_debts_df, max_oc_requirement = oc_level)
 		worst_outcomes = simulation.worst_case_per_protocol_number(sims, debt_size = debt_size, liquidity_param = liquidity_param)
 		worst_outcomes.plot(ax = ax[index])
 		ax[index].get_legend().remove()
-		ax[index].set_title('Max. O/C req.: ' + str(oc_level), fontsize = 12)
+		ax[index].set_title('O/C: ' + str(oc_level), fontsize = 12)
 		ax[index].tick_params(axis='both', which='major', labelsize=14)
 	ax[0].set_ylabel('Total loss (USD)', fontsize = 14)
 	ax[0].set_xlabel('Number of additional protocols', fontsize = 14)
 	fig.suptitle('Financial losses with composable protocols', fontsize = 18)
-	#fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/protocol_defaults.pdf', dpi = 600, bbox_inches='tight')
+	fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
+	fig.savefig('../5d8dd7887374be0001c94b71/images/protocol_defaults.pdf', bbox_inches='tight')
