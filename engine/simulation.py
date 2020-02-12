@@ -10,7 +10,7 @@ from random import uniform
 from engine import get_data
 from engine import kernel_estimation
 
-def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt):
+def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt, correlation, res_vol, collateral_asset):
 	'''
 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
 	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
@@ -20,17 +20,21 @@ def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt):
 	:num_simulations: number of runs of simulation to perform. 
 	:T: length of time prediction horizon (in units of dt, i.e. days)
 	:dt: time increment, i.e. frequency of data (using daily data here)
+	:correlation: strength of correlation between ETH and RES asset
+	:res_vol: the relative volatility of the Reserve asset to ETH. a value of 0.5 indicates the Reserve asset has half the std dev.
+	:collateral_asset: asset used as collateral, i.e. ETH.
 	'''
 	#Set seed to ensure same simulation run
-	np.random.seed(137)
+	np.random.seed(150)
+
+	#Add duplicated column for prices
+	historical_prices['RES'] = historical_prices[collateral_asset]
 
 	num_periods_ahead = int(T / dt)
 
 	#From prices, calculate log returns
 	log_returns = np.log(historical_prices) - np.log(historical_prices.shift(1))
 	log_returns = log_returns.dropna()
-
-	#Parameter assignment
 
 	#Initial asset price
 	S0 = historical_prices.iloc[-1]
@@ -41,18 +45,16 @@ def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt):
 
 	#Standard deviation of log return
 	sigma = np.std(log_returns)
-	print('sigma: ' + str(sigma))
-	#Diagonal sigmas
-	#sd = np.diag(sigma)
 
-	#Compute covariance matrix from historical prices
-	corr_matrix = log_returns.corr()
-	cov_matrix = log_returns.cov()
-	print(corr_matrix)
+	#Set relative volatility of Reserve asset to ETH
+	sigma['RES'] = sigma['ETH'] * res_vol
+	print('sigma: ' + str(sigma))
+
+	#Create correlation matrix
+	corr_matrix = np.array([[1, correlation], [correlation, 1]])
 
 	#Cholesky decomposition
 	Chol = np.linalg.cholesky(corr_matrix)
-	#Chol = np.linalg.cholesky(cov_matrix)
 
 	#Time index for predicted periods
 	t = np.arange(1, int(num_periods_ahead) + 1)
@@ -100,79 +102,79 @@ def multivariate_monte_carlo_normal(historical_prices, num_simulations, T, dt):
 	return simulations
 
 
-def multivariate_monte_carlo_historical(historical_prices, num_simulations, T, dt):
-	'''
-	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
-	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
-	:historical_prices: dataframe where columns are assets and rows are time
-	:length_of_crash: number of days the worst ETH shock (-22.45\%) occurs
-	:shock_size: size of worst eth shock
-	:num_simulations: number of runs of simulation to perform. 
-	:T: length of time prediction horizon (in units of dt, i.e. days)
-	:dt: time increment, i.e. frequency of data (using daily data here)
-	'''
-	#Set seed to ensure same simulation run
-	np.random.seed(137)
+# def multivariate_monte_carlo_historical(historical_prices, num_simulations, T, dt):
+# 	'''
+# 	Perform Monte Carlo Simulation using empirical distribution of log returns (via Kernel Density Estimate).
+# 	Monte carlo equation: St = St-1* exp((μ-(σ2/2))*t + σWt).
+# 	:historical_prices: dataframe where columns are assets and rows are time
+# 	:length_of_crash: number of days the worst ETH shock (-22.45\%) occurs
+# 	:shock_size: size of worst eth shock
+# 	:num_simulations: number of runs of simulation to perform. 
+# 	:T: length of time prediction horizon (in units of dt, i.e. days)
+# 	:dt: time increment, i.e. frequency of data (using daily data here)
+# 	'''
+# 	#Set seed to ensure same simulation run
+# 	np.random.seed(137)
 
-	num_periods_ahead = int(T / dt)
+# 	num_periods_ahead = int(T / dt)
 
-	#From prices, calculate log returns
-	log_returns = np.log(historical_prices) - np.log(historical_prices.shift(1))
-	log_returns = log_returns.dropna()
+# 	#From prices, calculate log returns
+# 	log_returns = np.log(historical_prices) - np.log(historical_prices.shift(1))
+# 	log_returns = log_returns.dropna()
 
-	#Mean log return
-	mu = np.mean(log_returns)
-	print('mu: ' + str(mu))
+# 	#Mean log return
+# 	mu = np.mean(log_returns)
+# 	print('mu: ' + str(mu))
 
-	#Standard deviation of log return
-	sigma = np.std(log_returns)
-	print('sigma: ' + str(sigma))
-	#Diagonal sigmas
-	#sd = np.diag(sigma)
+# 	#Standard deviation of log return
+# 	sigma = np.std(log_returns)
+# 	print('sigma: ' + str(sigma))
+# 	#Diagonal sigmas
+# 	#sd = np.diag(sigma)
 
-	#Time index for predicted periods
-	t = np.arange(1, int(num_periods_ahead) + 1)
+# 	#Time index for predicted periods
+# 	t = np.arange(1, int(num_periods_ahead) + 1)
 
-	#Initial asset price
-	S0 = historical_prices.iloc[-1]
+# 	#Initial asset price
+# 	S0 = historical_prices.iloc[-1]
 
-	b = {}
-	for simulation in range(1, num_simulations + 1):
-		sim = []
-		for asset in log_returns.columns:
-			random_sequence = []
-			for period in range(num_periods_ahead):
-				random_sequence.append(log_returns[asset].sample(1).values[0])
-			sim.append(random_sequence)
-		b[str(simulation)] = sim
+# 	b = {}
+# 	for simulation in range(1, num_simulations + 1):
+# 		sim = []
+# 		for asset in log_returns.columns:
+# 			random_sequence = []
+# 			for period in range(num_periods_ahead):
+# 				random_sequence.append(log_returns[asset].sample(1).values[0])
+# 			sim.append(random_sequence)
+# 		b[str(simulation)] = sim
 	
-	#Cumulate the shocks
-	#W is keyed by simulations, within which rows correspond to assets and columns to periods ahead
-	W = {}
-	for simulation in range(1, num_simulations + 1):
-		W[str(simulation)] = [np.cumsum(b[str(simulation)][asset]) for asset in range(len(S0))]
+# 	#Cumulate the shocks
+# 	#W is keyed by simulations, within which rows correspond to assets and columns to periods ahead
+# 	W = {}
+# 	for simulation in range(1, num_simulations + 1):
+# 		W[str(simulation)] = [np.cumsum(b[str(simulation)][asset]) for asset in range(len(S0))]
 
-	simulations = {}
-	for simulation in range(1, num_simulations + 1):
+# 	simulations = {}
+# 	for simulation in range(1, num_simulations + 1):
 
-		sim = []
+# 		sim = []
 
-		for asset in range(len(S0)):
+# 		for asset in range(len(S0)):
 			
-			#Calculate drift
-			drift = (mu[asset] - 0.5 * (sigma[asset]**2)) * t
+# 			#Calculate drift
+# 			drift = (mu[asset] - 0.5 * (sigma[asset]**2)) * t
 
-			#Calculate Diffusion
-			diffusion = W[str(simulation)][asset]
+# 			#Calculate Diffusion
+# 			diffusion = W[str(simulation)][asset]
 
-			#Make predictions
-			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion+drift))
+# 			#Make predictions
+# 			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion+drift))
 
-			sim.append(predicted_path)	
+# 			sim.append(predicted_path)	
 
-		simulations[str(simulation)] = sim
+# 		simulations[str(simulation)] = sim
 
-	return simulations
+# 	return simulations
 
 def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	'''
@@ -187,7 +189,7 @@ def asset_extractor_from_sims(simulations, asset_index_in_basket):
 	
 	return asset_sims
 
-def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup, token_basket):
+def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:simulations: monte carlo simulations of correlated price movements
@@ -197,10 +199,8 @@ def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralizatio
     '''
 	sims = {}
 	for simulation in range(1, len(simulations) + 1):
-		eth_index = token_basket.index('ETH')
-		eth_sim_prices = simulations[str(simulation)][eth_index]
-		mkr_index = token_basket.index('MKR')
-		mkr_sim_prices = simulations[str(simulation)][mkr_index]
+		eth_sim_prices = simulations[str(simulation)][0]
+		res_sim_prices = simulations[str(simulation)][1]
 		total_margins = []
 		debts = []
 		eth_collateral = []
@@ -222,9 +222,9 @@ def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralizatio
 				#MARGIN
 				total_eth = starting_eth_collateral * eth_sim_prices[index]  #USD
 				#print('Total ETH: ' + str(total_eth))
-				total_mkr = quantity_reserve_asset * mkr_sim_prices[index] #USD
-				#print('Total MKR: ' + str(total_mkr))
-				margin = total_eth + total_mkr - initial_debt #USD
+				total_res = quantity_reserve_asset * res_sim_prices[index] #USD
+				#print('Total MKR: ' + str(total_res))
+				margin = total_eth + total_res - initial_debt #USD
 				#print('Debt: ' + str(debt))
 				#print('Total margin: ' + str(margin))
 				total_margins.append(margin)
@@ -256,9 +256,9 @@ def crash_simulator(simulations, initial_debt, initial_eth_vol, collateralizatio
 				#MARGIN
 				total_eth = eth_collateral_end_period * eth_sim_prices[index] #USD
 				#print('Total ETH: ' + str(total_eth))
-				total_mkr = quantity_reserve_asset * mkr_sim_prices[index] #USD
-				#print('Total MKR: ' + str(total_mkr))
-				total_margin = total_eth + total_mkr - debt_end_period #USD
+				total_res = quantity_reserve_asset * res_sim_prices[index] #USD
+				#print('Total MKR: ' + str(total_res))
+				total_margin = total_eth + total_res - debt_end_period #USD
 				#print('Debt: ' + str(debt_end_period))
 				#print('Total margin: ' + str(total_margin))
 				total_margins.append(total_margin)
@@ -289,7 +289,7 @@ def undercollateralized_debt(price_simulations, sim_results, point_evaluate_eth_
 
 	return debt_when_negative_margin
 
-def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, token_basket, point_evaluate_eth_price):
+def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, point_evaluate_eth_price):
 	'''
 	For the considered range of debts and liquidities, create a DataFrame of the debt at the point of collapse. 
 	'''
@@ -297,7 +297,7 @@ def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vo
 
 	for i in debt_levels:
 		for j in liquidity_levels:
-			sim_results = crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = collateralization_ratio, quantity_reserve_asset = quantity_reserve_asset, liquidity_dryup = j, token_basket = token_basket)
+			sim_results = crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = collateralization_ratio, quantity_reserve_asset = quantity_reserve_asset, liquidity_dryup = j)
 			debt_when_negative_margin = undercollateralized_debt(price_simulations = price_simulations, sim_results = sim_results, point_evaluate_eth_price = point_evaluate_eth_price)
 			df.loc[int(i)][float(j)] = debt_when_negative_margin
 	

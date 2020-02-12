@@ -12,7 +12,7 @@ import matplotlib.ticker as ticker
 
 from engine import get_data
 from engine import simulation
-from constants import TOKEN_BASKET, DAYS_AHEAD, COLLATERALIZATION_RATIO, NUM_SIMULATIONS, QUANTITY_RESERVE_ASSET
+from constants import DAYS_AHEAD, COLLATERALIZATION_RATIO, NUM_SIMULATIONS, QUANTITY_RESERVE_ASSET, COLLATERAL_ASSET
 
 sns.set(style="darkgrid")
 
@@ -32,21 +32,21 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
     fig.autofmt_xdate()
     ax.set_xlabel('')
 
-    #MKR data
-    df = get_data.create_df('MKR', 'USD')
-    df = df[start_date:end_date]
-    ax2 = ax.twinx()
-    ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r', rasterized = True)
-    ax2.set_ylabel('MKR/USD price', fontsize = 14)
-    ax2.tick_params(axis='both', which='major', labelsize=14)
-    fig.autofmt_xdate()
-    ax2.set_xlabel('')
+    # #MKR data
+    # df = get_data.create_df('MKR', 'USD')
+    # df = df[start_date:end_date]
+    # ax2 = ax.twinx()
+    # ax2.plot(df.index, df['close'], label = 'MKR/USD', color = 'r', rasterized = True)
+    # ax2.set_ylabel('MKR/USD price', fontsize = 14)
+    # ax2.tick_params(axis='both', which='major', labelsize=14)
+    # fig.autofmt_xdate()
+    # ax2.set_xlabel('')
 
-    lines, labels = ax.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines + lines2, labels + labels2, loc=0)
+    # lines, labels = ax.get_legend_handles_labels()
+    # lines2, labels2 = ax2.get_legend_handles_labels()
+    # ax2.legend(lines + lines2, labels + labels2, loc=0)
 
-    plt.title('ETH/USD and MKR/USD close prices', fontsize = 14)
+    plt.title('ETH/USD close price', fontsize = 14)
     fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight')
 
 def plot_monte_carlo_simulations(price_simulations):
@@ -54,8 +54,9 @@ def plot_monte_carlo_simulations(price_simulations):
 	Plot the simulated prices.
 	:price_simulations: input from the Monte Carlo simulator
 	'''
-	for token in TOKEN_BASKET:
-		index = TOKEN_BASKET.index(token)
+	assets = [COLLATERAL_ASSET, 'RES']
+	for token in assets:
+		index = assets.index(token)
 		sims = simulation.asset_extractor_from_sims(price_simulations, index)
 		df = pd.DataFrame(sims)
 		fig, ax = plt.subplots()
@@ -72,8 +73,7 @@ def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
 	Plot the behaviour of the ETH price and the other token prices for the worst outcome from Monte Carlo.
 	'''
 	#Find the worst ETH outcome
-	index = TOKEN_BASKET.index('ETH')
-	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
+	sims_eth = simulation.asset_extractor_from_sims(price_simulations, 0)
 	df_eth = pd.DataFrame(sims_eth)
 	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
 	print(worst_eth_outcome)
@@ -81,27 +81,25 @@ def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
 	column_name = worst_eth.columns.values[0]
 	master_df = worst_eth.rename(columns = {column_name: "ETH"})
 
-	for token in TOKEN_BASKET:
-		if token != 'ETH':
-			#Find the corresponding simulation for the other tokens
-			index = TOKEN_BASKET.index(token)
-			sims_other = simulation.asset_extractor_from_sims(price_simulations, index)
-			df_other = pd.DataFrame(sims_other)
-			corresponding_other_sims = df_other.loc[:, worst_eth_outcome]
-			corresponding_other_sims = corresponding_other_sims.rename(columns = {column_name: str(token)})
-			#Join and plot to see correlated movements
-			master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
+	#Find the corresponding simulation for the other tokens
+	index = 1
+	sims_other = simulation.asset_extractor_from_sims(price_simulations, index)
+	df_other = pd.DataFrame(sims_other)
+	corresponding_other_sims = df_other.loc[:, worst_eth_outcome]
+	corresponding_other_sims = corresponding_other_sims.rename(columns = {column_name: 'RES'})
+	#Join and plot to see correlated movements
+	master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
 	
 	df_normalized = master_df/master_df.loc[0]
 	fig, ax = plt.subplots()
 	df_normalized.plot(ax=ax, rasterized = True)
 	ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
 	ax.tick_params(axis='both', which='major', labelsize=14)
-	plt.title('The co-evolution of the ETH other token prices', fontsize = 14)
+	plt.title('The co-evolution of the ETH and reserve token prices', fontsize = 14)
 	ax.set_xlabel('Time steps (days)', fontsize = 14)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.pdf', bbox_inches = 'tight')
 
-def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, point_evaluate_eth_price):
+def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, point_evaluate_eth_price, correlation):
     '''
     Plot system simulation.
     '''
@@ -115,7 +113,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
         debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
         debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
         for liquidity in liquidity_levels:
-            system_simulations = simulation.crash_simulator(simulations = price_simulations, initial_debt = debt, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity, token_basket = TOKEN_BASKET)
+            system_simulations = simulation.crash_simulator(simulations = price_simulations, initial_debt = debt, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity)
             
             #Reconstruct dictionaries for margin and dai liability separately
             margin_simulations = {}
@@ -168,9 +166,9 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     fig.subplots_adjust(bottom=0.2) 
     ax[0].set_ylabel('USD', fontsize = 14)
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
-    fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
+    fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins, (Corr: ' + str(correlation) + ')', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt.pdf', bbox_inches='tight')
+    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt' + str(correlation) + '.pdf', bbox_inches='tight')
 
 def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol, point_evaluate_eth_price):
 	'''
@@ -181,7 +179,7 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
 	
 	for i in debt_levels:
 		for j in liquidity_params:
-			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = j, token_basket = TOKEN_BASKET)
+			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = j)
 			#Reconstruct dictionaries for margin and dai liability separately
 			margin_simulations = {}
 			for x in range(1, NUM_SIMULATIONS+1):
@@ -221,7 +219,7 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
 	
 	for i in debt_levels:
 		for j in initial_eth_vols:
-			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = j, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity_param, token_basket = TOKEN_BASKET)
+			all_sims = simulation.crash_simulator(simulations = price_simulations, initial_debt = i, initial_eth_vol = j, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity_param)
 			#Reconstruct dictionaries for margin and dai liability separately
 			margin_simulations = {}
 			for x in range(1, NUM_SIMULATIONS+1):

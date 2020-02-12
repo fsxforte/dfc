@@ -13,7 +13,7 @@ import datetime as dt
 from time import mktime
 
 from settings import API_KEY
-from constants import TOKEN_BASKET
+from constants import COLLATERAL_ASSET
 from engine import simulation
 
 time_now = int(time.time())
@@ -105,25 +105,23 @@ def create_df(from_sym: str, to_sym: str, allData: str = 'true'):
 	return df
 
 def create_close_df():
-	#Build matrix of close prices for MCD tokens
+	#Build matrix of close prices for the collateral asset
 	close_master = pd.DataFrame()
-	for token in constants.TOKEN_BASKET:
-		token_df = create_df(from_sym = token, to_sym = 'USD')
-		close = token_df['close']
-		close = close.rename(token)
-		close_master = pd.concat([close_master, close], axis = 1)
-		close_master.replace(0.0, np.nan, inplace=True)
+	token_df = create_df(from_sym = COLLATERAL_ASSET, to_sym = 'USD')
+	close = token_df['close']
+	close = close.rename(str(COLLATERAL_ASSET))
+	close_master = pd.concat([close_master, close], axis = 1)
+	close_master.replace(0.0, np.nan, inplace=True)
 	return close_master
 
 def create_logrets_df():
-	#Build matrix of close prices for MCD tokens
+	#Build matrix of close prices for the collateral asset
 	logreturns_master = pd.DataFrame()
-	for token in constants.TOKEN_BASKET:
-		token_df = create_df(from_sym = token, to_sym = 'USD')
-		token_df.replace(0.0, np.nan, inplace=True)
-		rets = np.log(token_df['close']) - np.log(token_df['close'].shift(1))
-		rets = rets.rename(token)
-		logreturns_master = pd.concat([logreturns_master, rets], axis = 1)
+	token_df = create_df(from_sym = COLLATERAL_ASSET, to_sym = 'USD')
+	token_df.replace(0.0, np.nan, inplace=True)
+	rets = np.log(token_df['close']) - np.log(token_df['close'].shift(1))
+	rets = rets.rename(token)
+	logreturns_master = pd.concat([logreturns_master, rets], axis = 1)
 	return logreturns_master
 
 def create_logrets_series(df):
@@ -215,8 +213,7 @@ def extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price):
 	:price_simulations: data from the Monte Carlo simulations.
 	:period: which time period to extract the worst ETH price from.
 	'''
-	index = TOKEN_BASKET.index('ETH')
-	sims_eth = simulation.asset_extractor_from_sims(price_simulations, index)
+	sims_eth = simulation.asset_extractor_from_sims(price_simulations, 0)
 	df_eth = pd.DataFrame(sims_eth)
 	return df_eth.iloc[point_evaluate_eth_price].nsmallest(1).index
 
@@ -274,11 +271,11 @@ def coingecko_volumes(token: str, volume_unit: str = None):
 	else:
 		return token_vols
 
-def get_liquidities(token_basket):
-	'''
-	Extract liquidities for all tokens in basket.
-	'''
-	liquidity_dict = {}
-	for token in token_basket:
-		liquidity_dict[token] = coingecko_volumes(token = token)
-	return liquidity_dict
+# def get_liquidities(token_basket):
+# 	'''
+# 	Extract liquidities for all tokens in basket.
+# 	'''
+# 	liquidity_dict = {}
+# 	for token in token_basket:
+# 		liquidity_dict[token] = coingecko_volumes(token = token)
+# 	return liquidity_dict
