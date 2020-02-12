@@ -31,6 +31,7 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
     ax.tick_params(axis='both', which='major', labelsize=14)
     fig.autofmt_xdate()
     ax.set_xlabel('')
+    ax.set_rasterized(rasterized = True)
 
     # #MKR data
     # df = get_data.create_df('MKR', 'USD')
@@ -49,7 +50,7 @@ def plot_close_prices(start_date: dt.datetime, end_date: dt.datetime):
     plt.title('ETH/USD close price', fontsize = 14)
     fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight')
 
-def plot_monte_carlo_simulations(price_simulations):
+def plot_monte_carlo_simulations(price_simulations, correlation):
 	'''
 	Plot the simulated prices.
 	:price_simulations: input from the Monte Carlo simulator
@@ -66,9 +67,11 @@ def plot_monte_carlo_simulations(price_simulations):
 		plt.title(token + '/USD: ' + str(NUM_SIMULATIONS) + ' Monte Carlo Simulations', fontsize = 14)
 		ax.set_xlabel('Time steps (days)', fontsize = 14)
 		ax.get_legend().remove()
-		fig.savefig('../5d8dd7887374be0001c94b71/images/' + token + '_monte_carlo.pdf', bbox_inches = 'tight')
+		ax.set_rasterized(rasterized = True)
 
-def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
+		fig.savefig('../5d8dd7887374be0001c94b71/images/' + token + str(correlation) + '_monte_carlo.pdf', bbox_inches = 'tight')
+
+def plot_worst_simulation(price_simulations, point_evaluate_eth_price, correlation):
 	'''
 	Plot the behaviour of the ETH price and the other token prices for the worst outcome from Monte Carlo.
 	'''
@@ -90,14 +93,14 @@ def plot_worst_simulation(price_simulations, point_evaluate_eth_price):
 	#Join and plot to see correlated movements
 	master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
 	
-	df_normalized = master_df/master_df.loc[0]
 	fig, ax = plt.subplots()
-	df_normalized.plot(ax=ax, rasterized = True)
+	master_df.plot(ax=ax, rasterized = True)
 	ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
 	ax.tick_params(axis='both', which='major', labelsize=14)
+	ax.set_rasterized(rasterized = True)
 	plt.title('The co-evolution of the ETH and reserve token prices', fontsize = 14)
 	ax.set_xlabel('Time steps (days)', fontsize = 14)
-	fig.savefig('../5d8dd7887374be0001c94b71/images/co-evolution.pdf', bbox_inches = 'tight')
+	fig.savefig('../5d8dd7887374be0001c94b71/images/' + str(correlation)+ 'co-evolution.pdf', bbox_inches = 'tight')
 
 def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, point_evaluate_eth_price, correlation):
     '''
@@ -150,6 +153,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
         debt_scale = debt / 100000000
         ax[i].set_title('Initial debt: ' + str(f'{debt:,}'), fontsize = 10.5)
         ax[i].tick_params(axis='both', which='major', labelsize=14)
+        ax[i].set_rasterized(rasterized = True)
 
         #Shading
         ax_lims = ax[i].get_ylim()
@@ -160,13 +164,13 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
         else:
             handles, labels = ax[i].get_legend_handles_labels()
             extra = Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-            fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Constant liquidity', 'Margin', 'Remaining debt', 'Illiquidity: '+ str(liquidity_levels[1]), 'Margin', 'Remaining debt', 'Illiquidity: '+ str(liquidity_levels[2]), 'Margin', 'Remaining debt'], loc = 'lower center', ncol=3, borderaxespad=0., fontsize = 14)#, bbox_to_anchor=(0.5,-0.0005))
+            fig.legend([extra, handles[0], handles[3], extra, handles[1], handles[4], extra, handles[2], handles[5]], ['Constant liquidity', 'Collateral margin', 'Remaining debt', 'Illiquidity: '+ str(liquidity_levels[1]), 'Collateral margin', 'Remaining debt', 'Illiquidity: '+ str(liquidity_levels[2]), 'Collateral margin', 'Remaining debt'], loc = 'lower center', ncol=3, borderaxespad=0., fontsize = 14)#, bbox_to_anchor=(0.5,-0.0005))
             ax[i].get_legend().remove()
 
     fig.subplots_adjust(bottom=0.2) 
     ax[0].set_ylabel('USD', fontsize = 14)
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
-    fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins, (Corr: ' + str(correlation) + ')', fontsize = 18)
+    fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
     fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt' + str(correlation) + '.pdf', bbox_inches='tight')
 
@@ -206,6 +210,7 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
 	ax.set_xlabel('Liquidity parameter', fontsize = 18)
 	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
 	ax.tick_params(axis='both', which='major', labelsize=18)
+	ax.set_rasterized(rasterized = True)
 	plt.xticks(rotation=90)
 	ax.figure.axes[-1].yaxis.label.set_size(18)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative_params.pdf', bbox_inches='tight')
@@ -244,6 +249,7 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
 	fig, ax = plt.subplots(1,1, figsize=(10,8))
 	sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
 	ax.set_ylabel('Debt (USD)', fontsize = 18)
+	ax.set_rasterized(rasterized = True)
 	ax.set_xlabel('Initial ETH/DAI liquidity', fontsize = 18)
 	fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
 	ax.tick_params(axis='both', which='major', labelsize=18)
@@ -260,6 +266,7 @@ def plot_worst_economy_outcomes(df, collateralization_ratio):
 	ax.get_legend().remove()
 	ax.set_ylabel('Loss (USD)', fontsize = 18)
 	ax.set_xlabel('Number of additional protocols', fontsize = 18)
+	ax.set_rasterized(rasterized = True)
 	fig.suptitle('Financial losses with composable protocols', fontsize = 20)
 	ax.tick_params(axis='both', which='major', labelsize=18)
 	fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.df', bbox_inches='tight')
@@ -277,6 +284,7 @@ def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, oc_l
 		ax[index].get_legend().remove()
 		ax[index].set_title('O/C: ' + str(oc_level), fontsize = 12)
 		ax[index].tick_params(axis='both', which='major', labelsize=14)
+		ax[index].set_rasterized(rasterized = True)
 	ax[0].set_ylabel('Total loss (USD)', fontsize = 14)
 	ax[0].set_xlabel('Number of additional protocols', fontsize = 14)
 	fig.suptitle('Financial losses with composable protocols', fontsize = 18)

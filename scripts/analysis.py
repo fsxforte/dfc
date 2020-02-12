@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 
 from engine import get_data, plots, simulation
-from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUIDITIES, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, OC_LEVELS, POINT_EVALUATE_ETH_PRICE, INITIAL_ETH_VOL, COLLATERAL_ASSET
+from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUIDITIES, COLLATERALIZATION_RATIO, QUANTITY_RESERVE_ASSET, OC_LEVELS, POINT_EVALUATE_ETH_PRICE, INITIAL_ETH_VOL, COLLATERAL_ASSET, CORRELATIONS
 
 START_DATE = dt.datetime(2018,1,1)
 END_DATE = dt.datetime(2020,2,7)
@@ -17,17 +17,18 @@ close_prices = get_data.create_close_df()[START_DATE:END_DATE]
 #2. Plot ETH price
 plots.plot_close_prices(start_date = START_DATE, end_date = END_DATE)
 
+#Gererate most of the plots
 #3. Using dataframe for crash period, perform Monte Carlo simulation using normal distribution and historical distribution
-price_simulations_normal = simulation.multivariate_monte_carlo_normal(historical_prices = close_prices, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.1, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+price_simulations_normal = simulation.multivariate_monte_carlo_normal(historical_prices = close_prices, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
 
 #4. Plot the simulated prices
-plots.plot_monte_carlo_simulations(price_simulations_normal)
+#plots.plot_monte_carlo_simulations(price_simulations_normal, correlation = '0-1')
 
 #5. Plot the worst (joint) path
-plots.plot_worst_simulation(price_simulations_normal, point_evaluate_eth_price = 100)
+plots.plot_worst_simulation(price_simulations_normal, point_evaluate_eth_price = 100, correlation = '0--9')
 
 #6. Plot simulation outputs for debts and liquidities
-plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = 0.1)
+plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = '0--9')
 
 #7. Plot heatmap for debt vs liquidity dry-up
 debts = []
