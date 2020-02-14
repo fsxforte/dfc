@@ -10,9 +10,6 @@ import statsmodels.api as sm
 
 from engine import get_data
 
-
-sns.set(style="darkgrid")
-
 ######################################
 #1 Using 1h data, plot probability of 33% price drop for different time horizons (based on historical data)
 ######################################

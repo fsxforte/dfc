@@ -9,9 +9,6 @@ import matplotlib as mpl
 from engine import get_data
 import constants
 
-sns.set(style="darkgrid")
-
-
 #Extract current PETH/ETH ratio
 #ETH_PETH_RATIO = 
 

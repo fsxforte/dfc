@@ -5,8 +5,6 @@ from mpl_toolkits import mplot3d
 from matplotlib import cm
 
 
-sns.set(style="darkgrid")
-
 correlations = [0, 0.25, 0.5, 0.75, 1]
 
 def f(x, y, corr):
