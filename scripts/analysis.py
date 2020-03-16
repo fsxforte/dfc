@@ -11,47 +11,36 @@ from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUID
 START_DATE = dt.datetime(2018,1,1)
 END_DATE = dt.datetime(2020,2,7)
 
-#1. Make dataframe of close prices since 1 January 2018 for all tokens in basket
-close_prices = get_data.create_close_df()[START_DATE:END_DATE]
+CORRELATIONS = [-0.9, 0.1, 0.9]
+RETURNS_DISTRIBUTIONS = ['normal', 'historical']
+
+#1. Get close price data for ETH
+close_prices = get_data.get_prices(from_sym=COLLATERAL_ASSET, to_sym='USD', start_date=START_DATE, end_date=END_DATE)
 
 #2. Plot ETH price
-plots.plot_close_prices(start_date = START_DATE, end_date = END_DATE)
+plots.plot_close_prices(close_prices)
 
-# ###############
-# price_simulations_normal = simulation.multivariate_monte_carlo_normal(historical_prices = close_prices, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = -0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+#3. Compute log returns
+log_returns = get_data.compute_log_returns(close_prices)
 
-# #4. Plot the simulated prices
-# #plots.plot_monte_carlo_simulations(price_simulations_normal, correlation = '0--9')
+#3. Plot log returns
+plots.plot_log_returns(log_returns)
 
-# #5. Plot the worst (joint) path
-# plots.plot_worst_simulation(price_simulations_normal, point_evaluate_eth_price = 100, correlation = '0--9')
+#4. Plot histogram log returns
+plots.plot_histogram_log_returns(log_returns)
 
-# #6. Plot simulation outputs for debts and liquidities
-# plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = '0--9')
+#5. Price plots
+for distribution in RETURNS_DISTRIBUTIONS:
+    for correlation in CORRELATIONS:
+        price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = distribution, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = correlation, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+        plots.plot_monte_carlo_simulations(price_simulations, returns_distribution = distribution, correlation = str(correlation))
+        plots.plot_worst_simulation(price_simulations, returns_distribution = distribution, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(correlation))
 
-# price_simulations_normal = simulation.multivariate_monte_carlo_normal(historical_prices = close_prices, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.1, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
-
-# #4. Plot the simulated prices
-# #plots.plot_monte_carlo_simulations(price_simulations_normal, correlation = '0-1')
-
-# #5. Plot the worst (joint) path
-# plots.plot_worst_simulation(price_simulations_normal, point_evaluate_eth_price = 100, correlation = '0-1')
-
-# #6. Plot simulation outputs for debts and liquidities
-# plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = '0-1')
-# #################
-
-#3. Using dataframe for crash period, perform Monte Carlo simulation using normal distribution and historical distribution
-price_simulations_normal = simulation.multivariate_monte_carlo_normal(historical_prices = close_prices, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
-
-#4. Plot the simulated prices
-plots.plot_monte_carlo_simulations(price_simulations_normal, correlation = '0-9')
-
-#5. Plot the worst (joint) path
-plots.plot_worst_simulation(price_simulations_normal, point_evaluate_eth_price = 100, correlation = '0-9')
-
-#6. Plot simulation outputs for debts and liquidities
-plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = '0-9')
+#6. Crash plots
+correlation = 0.9
+returns_distribution = 'historical'
+price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = returns_distribution, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = correlation, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, returns_distribution = returns_distribution, correlation = str(correlation))
 
 #7. Plot heatmap for debt vs liquidity dry-up
 debts = []
@@ -62,17 +51,17 @@ liquidities = []
 for x in np.arange(0, 0.03, 0.005):
     liquidities.append(x)
 
-plots.plot_heatmap_liquidities(debt_levels = debts, liquidity_params = liquidities, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
+plots.plot_heatmap_liquidities(debt_levels = debts, liquidity_params = liquidities, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
 
 #8. Plot heatmap for debt vs initial eth liquidity
 eth_vols = []
 for x in range(0, 50000, 5000):
     eth_vols.append(x)
 
-plots.plot_heatmap_initial_volumes(debt_levels = debts, liquidity_param = 0.01, price_simulations = price_simulations_normal, initial_eth_vols = eth_vols, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
+plots.plot_heatmap_initial_volumes(debt_levels = debts, liquidity_param = 0.01, price_simulations = price_simulations, initial_eth_vols = eth_vols, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
 
 #9. Find the debt outstanding when market crashes
-debts_outstanding = simulation.crash_debts(debt_levels = debts, liquidity_levels = liquidities, price_simulations = price_simulations_normal, initial_eth_vol = INITIAL_ETH_VOL, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
+debts_outstanding = simulation.crash_debts(debt_levels = debts, liquidity_levels = liquidities, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE)
 
 #10. Examine what the worst case is from #10 (for each economy size)
 plots.plot_protocol_universe_default(max_number_of_protocols = 30, crash_debts_df = debts_outstanding, oc_levels = OC_LEVELS, debt_size = 400000000, liquidity_param = 0.01)
