@@ -38,7 +38,7 @@ for distribution in RETURNS_DISTRIBUTIONS:
 
 #6. Crash plots
 correlation = 0.9
-returns_distribution = 'historical'
+returns_distribution = 'normal'
 price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = returns_distribution, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = correlation, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
 plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, returns_distribution = returns_distribution, correlation = str(correlation))
 
