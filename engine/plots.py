@@ -31,7 +31,7 @@ def plot_close_prices(close_prices):
     ax.set_xlabel('')
 
     plt.title('ETH/USD close price', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_log_returns(log_returns):
     '''
@@ -46,7 +46,7 @@ def plot_log_returns(log_returns):
     ax.set_xlabel('')
 
     plt.title('ETH/USD log returns', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_histogram_log_returns(log_returns):
     '''
@@ -61,7 +61,7 @@ def plot_histogram_log_returns(log_returns):
     ax.set_xlabel('')
 
     plt.title('ETH/USD log returns', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_monte_carlo_simulations(price_simulations, correlation: float, returns_distribution: str):
     '''
@@ -80,7 +80,8 @@ def plot_monte_carlo_simulations(price_simulations, correlation: float, returns_
         ax.set_xlabel('Time steps (days)', fontsize = 14)
         ax.get_legend().remove()
 
-        fig.savefig('../5d8dd7887374be0001c94b71/images/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
+        fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
+
 
 def plot_worst_simulation(price_simulations, returns_distribution: str, point_evaluate_eth_price, correlation):
     '''
@@ -110,7 +111,7 @@ def plot_worst_simulation(price_simulations, returns_distribution: str, point_ev
     #ax.set_rasterized(rasterized = True)
     plt.title('The co-evolution of the ETH and reserve token prices', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/' + str(correlation)+ str(returns_distribution) + 'co-evolution.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + str(correlation)+ str(returns_distribution) + 'co-evolution.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, point_evaluate_eth_price, returns_distribution, correlation):
     '''
@@ -179,7 +180,7 @@ def plot_crash_sims(debt_levels, liquidity_levels, price_simulations, initial_et
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/total_margin_debt' + str(returns_distribution) + str(correlation) + '.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + '.pdf', bbox_inches='tight', dpi = 300)
 
 def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol, point_evaluate_eth_price):
     '''
@@ -220,7 +221,7 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
     #ax.set_rasterized(rasterized = True)
     plt.xticks(rotation=90)
     ax.figure.axes[-1].yaxis.label.set_size(18)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
 
 def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, point_evaluate_eth_price):
     '''
@@ -262,7 +263,7 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
     ax.tick_params(axis='both', which='major', labelsize=18)
     plt.xticks(rotation=90)
     ax.figure.axes[-1].yaxis.label.set_size(18)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/first_negative_vols.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_vols.pdf', bbox_inches='tight', dpi = 300)
 
 def plot_worst_economy_outcomes(df, collateralization_ratio):
     '''
@@ -275,7 +276,7 @@ def plot_worst_economy_outcomes(df, collateralization_ratio):
     ax.set_xlabel('Number of additional protocols', fontsize = 18)
     fig.suptitle('Financial losses with composable protocols', fontsize = 20)
     ax.tick_params(axis='both', which='major', labelsize=18)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/worst_case_plot_'+str(collateralization_ratio)+'.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/worst_case_plot_'+str(collateralization_ratio)+'.pdf', bbox_inches='tight', dpi = 300)
 
 
 def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, oc_levels, debt_size, liquidity_param):
@@ -295,4 +296,4 @@ def plot_protocol_universe_default(max_number_of_protocols, crash_debts_df, oc_l
     ax[0].set_xlabel('Number of additional protocols', fontsize = 14)
     fig.suptitle('Financial losses with composable protocols', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../5d8dd7887374be0001c94b71/images/protocol_defaults.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/protocol_defaults.pdf', bbox_inches='tight', dpi = 300)
