@@ -23,6 +23,9 @@ plots.plot_close_prices(close_prices)
 #3. Compute log returns
 log_returns = get_data.compute_log_returns(close_prices)
 
+#Jarque-Bera test for normality
+stats.jarque_bera(log_returns)
+
 #3. Plot log returns
 plots.plot_log_returns(log_returns)
 
@@ -38,31 +41,31 @@ plots.plot_histogram_log_returns(log_returns)
 
 #6. Plots for paper
 #Normally distributed shocks, 0.9 correlation
-price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = 'normal', num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
-plots.plot_monte_carlo_simulations(price_simulations, returns_distribution = 'normal', correlation = str(0.9))
-plots.plot_worst_simulation(price_simulations, returns_distribution = 'normal', point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(0.9))
+price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = 'historical', num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+plots.plot_monte_carlo_simulations(price_simulations, returns_distribution = 'historical', correlation = str(0.9))
+plots.plot_worst_simulation(price_simulations, returns_distribution = 'historical', point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(0.9))
 
 #Normally distributed, 0.1 correlation
-price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = 'normal', num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.1, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
-plots.plot_worst_simulation(price_simulations, returns_distribution = 'normal', point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(0.1))
+price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = 'historical', num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = 0.1, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+plots.plot_worst_simulation(price_simulations, returns_distribution = 'historical', point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(0.1))
 
 #Normally distributed, -0.9 correlation
-price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = 'normal', num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = -0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
-plots.plot_worst_simulation(price_simulations, returns_distribution = 'normal', point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(-0.9))
+price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = 'historical', num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = -0.9, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
+plots.plot_worst_simulation(price_simulations, returns_distribution = 'historical', point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, correlation = str(-0.9))
 
 #6. Crash plots
 correlation = 0.9
-returns_distribution = 'normal'
+returns_distribution = 'historical'
 price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = returns_distribution, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = correlation, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
 plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, returns_distribution = returns_distribution, correlation = str(correlation))
 
 correlation = 0.1
-returns_distribution = 'normal'
+returns_distribution = 'historical'
 price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = returns_distribution, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = correlation, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
 plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, returns_distribution = returns_distribution, correlation = str(correlation))
 
 correlation = -0.9
-returns_distribution = 'normal'
+returns_distribution = 'historical'
 price_simulations = simulation.multivariate_monte_carlo(close_prices = close_prices, returns_distribution = returns_distribution, num_simulations = NUM_SIMULATIONS, T = DAYS_AHEAD, dt = TIME_INCREMENT, correlation = correlation, res_vol = 0.5, collateral_asset = COLLATERAL_ASSET)
 plots.plot_crash_sims(debt_levels = DEBTS, liquidity_levels = LIQUIDITIES, price_simulations = price_simulations, initial_eth_vol = INITIAL_ETH_VOL, point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, returns_distribution = returns_distribution, correlation = str(correlation))
 
