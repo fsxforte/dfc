@@ -63,7 +63,9 @@ def plot_histogram_log_returns(log_returns):
     plt.title('ETH/USD log returns', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
-def plot_monte_carlo_simulations(price_simulations, correlation: float, returns_distribution: str):
+def plot_monte_carlo_simulations(price_simulations, 
+                                    correlation: float, 
+                                    returns_distribution: str):
     '''
     Plot the simulated prices.
     :price_simulations: input from the Monte Carlo simulator
@@ -83,23 +85,26 @@ def plot_monte_carlo_simulations(price_simulations, correlation: float, returns_
         fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
 
 
-def plot_worst_simulation(price_simulations, returns_distribution: str, point_evaluate_eth_price, correlation):
+def plot_worst_simulation(price_simulations, 
+                            returns_distribution: str, 
+                            fastest_crash_sim_index, 
+                            correlation):
     '''
     Plot the behaviour of the collateral asset price and the other token prices for the worst outcome from Monte Carlo.
     '''
     #Find the worst collateral asset outcome
     sims_eth = simulation.asset_extractor_from_sims(price_simulations, COLLATERAL_ASSET)
     df_eth = pd.DataFrame(sims_eth)
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
-    print('Index of sim featuring worst ' + str(COLLATERAL_ASSET) + ' outcome at ' + str(point_evaluate_eth_price) + ' days: ' + str(worst_eth_outcome.values[0]))
-    worst_eth = df_eth.loc[:, worst_eth_outcome]
+    fastest_crash_sim_index = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
+    print('Index of sim featuring worst ' + str(COLLATERAL_ASSET) + ' outcome at ' + str(point_evaluate_eth_price) + ' days: ' + str(fastest_crash_sim_index.values[0]))
+    worst_eth = df_eth.loc[:, fastest_crash_sim_index]
     column_name = worst_eth.columns.values[0]
     master_df = worst_eth.rename(columns = {column_name: COLLATERAL_ASSET})
 
     #Find the corresponding simulation for the 'RES' asset
     sims_other = simulation.asset_extractor_from_sims(price_simulations, 'RES')
     df_other = pd.DataFrame(sims_other)
-    corresponding_other_sims = df_other.loc[:, worst_eth_outcome]
+    corresponding_other_sims = df_other.loc[:, fastest_crash_sim_index]
     corresponding_other_sims = corresponding_other_sims.rename(columns = {column_name: 'RES'})
     #Join and plot to see correlated movements
     master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
@@ -117,7 +122,7 @@ def plot_crash_sims(debt_levels,
                     liquidity_levels, 
                     price_simulations, 
                     initial_eth_vol, 
-                    point_evaluate_eth_price, 
+                    fastest_crash_sim_index, 
                     returns_distribution, 
                     correlation):
     '''
@@ -127,8 +132,7 @@ def plot_crash_sims(debt_levels,
     markers = ['s', 'p', 'v',]
     colors = ['g', 'k', 'r']
     fig, ax = plt.subplots(1, 4, figsize=(18,8))
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
-    print('Using worst ' + str(COLLATERAL_ASSET) + ' outcome, ' + str(worst_eth_outcome))
+    print('Using worst ' + str(COLLATERAL_ASSET) + ' outcome, ' + str(fastest_crash_sim_index))
     for i, debt in enumerate(debt_levels):
         debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
         debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
@@ -144,12 +148,12 @@ def plot_crash_sims(debt_levels,
             
             #Total margins
             df_margins = pd.DataFrame(margin_evolutions)
-            worst_path_margin = df_margins.loc[:, worst_eth_outcome]
+            worst_path_margin = df_margins.loc[:, fastest_crash_sim_index]
             debt_master_df_margin['Margin, '+ 'liq. ' + str(liquidity)] = worst_path_margin
 
             #Remaining debt
             df_debt = pd.DataFrame(debt_evolutions)
-            worst_path_debt = df_debt.loc[:, worst_eth_outcome]
+            worst_path_debt = df_debt.loc[:, fastest_crash_sim_index]
             debt_master_df_debt['Initial debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
 
         #Margin
@@ -188,11 +192,14 @@ def plot_crash_sims(debt_levels,
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + str(point_evaluate_eth_price) + '.pdf', bbox_inches='tight', dpi = 300)
 
-def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol, point_evaluate_eth_price):
+def plot_heatmap_liquidities(debt_levels, 
+                            liquidity_params, 
+                            price_simulations, 
+                            initial_eth_vol, 
+                            fastest_crash_sim_index):
     '''
     Plot heatmap of days until negative margin for debt and liquidity levels. 
     '''
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
     df_pairs = pd.DataFrame(index = debt_levels, columns = liquidity_params)
     
     for i in debt_levels:
@@ -203,7 +210,7 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
             for x in range(1, NUM_SIMULATIONS+1):
                 margin_simulations[str(x)] = all_sims[str(x)]['total_margin']
 
-            worst_margin_path = margin_simulations[worst_eth_outcome.values[0]]
+            worst_margin_path = margin_simulations[fastest_crash_sim_index.values[0]]
 
             #Find the first day gone negative
             negative_days = []
@@ -229,11 +236,10 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
     ax.figure.axes[-1].yaxis.label.set_size(18)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
 
-def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, point_evaluate_eth_price):
+def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, fastest_crash_sim_index):
     '''
     Plot heatmap of days until negative margin for debt and liquidity levels. 
     '''
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
     df_pairs = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
     
     for i in debt_levels:
@@ -244,7 +250,7 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
             for x in range(1, NUM_SIMULATIONS+1):
                 margin_simulations[str(x)] = all_sims[str(x)]['total_margin']
 
-            worst_margin_path = margin_simulations[worst_eth_outcome.values[0]]
+            worst_margin_path = margin_simulations[fastest_crash_sim_index.values[0]]
 
             #Find the first day gone negative
             negative_days = []
