@@ -68,7 +68,7 @@ plots.plot_monte_carlo_simulations(price_simulations_A,
 
 plots.plot_worst_simulation(price_simulations_A, 
                                 returns_distribution = 'normal', 
-                                point_evaluate_eth_price = POINT_EVALUATE_ETH_PRICE, 
+                                fastest_crash_sim_index=fastest_crash_sim_index, 
                                 correlation = str(0.9))
 
 #Normally distributed, 0.1 correlation

@@ -95,17 +95,15 @@ def plot_worst_simulation(price_simulations,
     #Find the worst collateral asset outcome
     sims_eth = simulation.asset_extractor_from_sims(price_simulations, COLLATERAL_ASSET)
     df_eth = pd.DataFrame(sims_eth)
-    fastest_crash_sim_index = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
-    print('Index of sim featuring worst ' + str(COLLATERAL_ASSET) + ' outcome at ' + str(point_evaluate_eth_price) + ' days: ' + str(fastest_crash_sim_index.values[0]))
+    print('Index of sim featuring worst ' + str(COLLATERAL_ASSET) + ' outcome at ' + str(fastest_crash_sim_index))
     worst_eth = df_eth.loc[:, fastest_crash_sim_index]
-    column_name = worst_eth.columns.values[0]
-    master_df = worst_eth.rename(columns = {column_name: COLLATERAL_ASSET})
+    master_df = worst_eth.rename('ETH')
 
     #Find the corresponding simulation for the 'RES' asset
     sims_other = simulation.asset_extractor_from_sims(price_simulations, 'RES')
     df_other = pd.DataFrame(sims_other)
     corresponding_other_sims = df_other.loc[:, fastest_crash_sim_index]
-    corresponding_other_sims = corresponding_other_sims.rename(columns = {column_name: 'RES'})
+    corresponding_other_sims = corresponding_other_sims.rename('RES')
     #Join and plot to see correlated movements
     master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
     
@@ -190,7 +188,7 @@ def plot_crash_sims(debt_levels,
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + str(point_evaluate_eth_price) + '.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + str(fastest_crash_sim_index) + '.pdf', bbox_inches='tight', dpi = 300)
 
 def plot_heatmap_liquidities(debt_levels, 
                             liquidity_params, 
