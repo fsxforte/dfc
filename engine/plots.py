@@ -32,6 +32,7 @@ def plot_close_prices(close_prices):
 
     plt.title('ETH/USD close price', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_log_returns(log_returns):
     '''
@@ -47,6 +48,7 @@ def plot_log_returns(log_returns):
 
     plt.title('ETH/USD log returns', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tokens_usd_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_histogram_log_returns(log_returns):
     '''
@@ -62,6 +64,7 @@ def plot_histogram_log_returns(log_returns):
 
     plt.title('ETH/USD log returns', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_monte_carlo_simulations(price_simulations, 
                                     correlation: float, 
@@ -83,6 +86,7 @@ def plot_monte_carlo_simulations(price_simulations,
         ax.get_legend().remove()
 
         fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
+        fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
 
 
 def plot_worst_simulation(price_simulations, 
@@ -115,6 +119,7 @@ def plot_worst_simulation(price_simulations,
     plt.title('The co-evolution of the ETH and reserve token prices', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + str(correlation)+ str(returns_distribution) + 'co-evolution.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/'  + str(correlation)+ str(returns_distribution) + 'co-evolution.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_crash_sims(debt_levels, 
                     liquidity_levels, 
@@ -189,6 +194,8 @@ def plot_crash_sims(debt_levels,
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + str(fastest_crash_sim_index) + '.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/total_margin_debt' + str(returns_distribution) + str(correlation) + str(fastest_crash_sim_index) + '.pdf', bbox_inches='tight', dpi = 300)
+
 
 def plot_heatmap_liquidities(debt_levels, 
                             liquidity_params, 
@@ -198,33 +205,28 @@ def plot_heatmap_liquidities(debt_levels,
     '''
     Plot heatmap of days until negative margin for debt and liquidity levels. 
     '''
-    df_pairs = pd.DataFrame(index = debt_levels, columns = liquidity_params)
+    df = pd.DataFrame(index = debt_levels, columns = liquidity_params)
     
     for i in debt_levels:
+
         for j in liquidity_params:
-            all_sims = simulation.crash_simulator(price_simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = j)
-            #Reconstruct dictionaries for margin and dai liability separately
-            margin_simulations = {}
-            for x in range(1, NUM_SIMULATIONS+1):
-                margin_simulations[str(x)] = all_sims[str(x)]['total_margin']
 
-            worst_margin_path = margin_simulations[fastest_crash_sim_index.values[0]]
+            crash_sims = simulation.crash_simulator(price_simulations = price_simulations, 
+                                                    initial_debt = i, 
+                                                    initial_eth_vol = initial_eth_vol, 
+                                                    collateralization_ratio = COLLATERALIZATION_RATIO, 
+                                                    quantity_reserve_asset = QUANTITY_RESERVE_ASSET, 
+                                                    liquidity_dryup = j)
 
-            #Find the first day gone negative
-            negative_days = []
-            for index, margin in enumerate(worst_margin_path):
-                if margin < 0:
-                    negative_days.append(index)
-                    first_negative_day = negative_days[0]
-                    df_pairs.loc[int(i)][float(j)] = first_negative_day
-                #else:
-                #	df_pairs.loc[int(i)][float(j)] = 0
+            fastest_default = simulation.extract_sim_fastest_default(crash_sims)
+            
+            df.loc[int(i)][float(j)] = fastest_default[1]
 
-    print(df_pairs)
-    mask = df_pairs.isnull()
+    print(df)
+    mask = df.isnull()
     sns.set(font_scale=1.4)
     fig, ax = plt.subplots(1,1, figsize=(10,8))
-    sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params], rasterized = True)
+    sns.heatmap(df.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params], rasterized = True)
     ax.set_ylabel('Debt (USD)', fontsize = 18)
     ax.set_xlabel('Liquidity parameter', fontsize = 18)
     fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
@@ -233,39 +235,34 @@ def plot_heatmap_liquidities(debt_levels,
     plt.xticks(rotation=90)
     ax.figure.axes[-1].yaxis.label.set_size(18)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
+
 
 def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, fastest_crash_sim_index):
     '''
     Plot heatmap of days until negative margin for debt and liquidity levels. 
     '''
-    df_pairs = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
+    df = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
     
     for i in debt_levels:
         for j in initial_eth_vols:
-            all_sims = simulation.crash_simulator(price_simulations = price_simulations, initial_debt = i, initial_eth_vol = j, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity_param)
-            #Reconstruct dictionaries for margin and dai liability separately
-            margin_simulations = {}
-            for x in range(1, NUM_SIMULATIONS+1):
-                margin_simulations[str(x)] = all_sims[str(x)]['total_margin']
+            all_sims = simulation.crash_simulator(price_simulations = price_simulations, 
+                                                    initial_debt = i, 
+                                                    initial_eth_vol = j, 
+                                                    collateralization_ratio = COLLATERALIZATION_RATIO, 
+                                                    quantity_reserve_asset = QUANTITY_RESERVE_ASSET, 
+                                                    liquidity_dryup = liquidity_param)
+            
+            fastest_default = simulation.extract_sim_fastest_default(crash_sims)
+            
+            df.loc[int(i)][float(j)] = fastest_default[1]
 
-            worst_margin_path = margin_simulations[fastest_crash_sim_index.values[0]]
+    print(df)
 
-            #Find the first day gone negative
-            negative_days = []
-            for index, margin in enumerate(worst_margin_path):
-                if margin < 0:
-                    negative_days.append(index)
-                    first_negative_day = negative_days[0]
-                    df_pairs.loc[int(i)][float(j)] = first_negative_day
-                #else:
-                #	df_pairs.loc[int(i)][float(j)] = 0
-
-    print(df_pairs)
-
-    mask = df_pairs.isnull()
+    mask = df.isnull()
     sns.set(font_scale=1.4)
     fig, ax = plt.subplots(1,1, figsize=(10,8))
-    sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
+    sns.heatmap(df.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
     ax.set_ylabel('Debt (USD)', fontsize = 18)
     #ax.set_rasterized(rasterized = True)
     ax.set_xlabel('Initial ETH/DAI liquidity', fontsize = 18)
@@ -274,6 +271,8 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
     plt.xticks(rotation=90)
     ax.figure.axes[-1].yaxis.label.set_size(18)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_vols.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/first_negative_vols.pdf', bbox_inches='tight', dpi = 300)
+
 
 # def plot_worst_economy_outcomes(df, collateralization_ratio):
 #     '''

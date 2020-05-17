@@ -107,7 +107,7 @@ def multivariate_monte_carlo(close_prices, returns_distribution: str, num_simula
 		for asset in S0.index:
 
 			drift = mu[asset] + 0.5 * sigma[asset]**2
-			print(drift)
+			# print(drift)
 			
 			#Calculate drift
 			drift_component = (drift - 0.5 * (sigma[asset]**2)) * t
