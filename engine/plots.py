@@ -246,7 +246,7 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
     
     for i in debt_levels:
         for j in initial_eth_vols:
-            all_sims = simulation.crash_simulator(price_simulations = price_simulations, 
+            crash_sims = simulation.crash_simulator(price_simulations = price_simulations, 
                                                     initial_debt = i, 
                                                     initial_eth_vol = j, 
                                                     collateralization_ratio = COLLATERALIZATION_RATIO, 
