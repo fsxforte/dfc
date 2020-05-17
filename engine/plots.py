@@ -306,3 +306,21 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
 #     fig.suptitle('Financial losses with composable protocols', fontsize = 18)
 #     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
 #     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/protocol_defaults.pdf', bbox_inches='tight', dpi = 300)
+
+def plot_tvl_defi(df):
+    '''
+    Plot prices of ETH and MKR on two separate y axes. 
+    :df: dataframe of tvl from DeFi pulse. 
+    '''
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.plot(df.index, df['tvlUSD'], label = 'ETH/USD', color = 'k', rasterized = True)
+    ax.set_ylabel('USD', fontsize = 14)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    fig.autofmt_xdate()
+    ax.set_xlabel('')
+
+    plt.title('Total value locked in DeFi projects.', fontsize = 14)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tvldefi.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tvldefi.pdf', bbox_inches = 'tight', dpi = 300)

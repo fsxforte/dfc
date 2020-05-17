@@ -11,6 +11,7 @@ import constants
 from datetime import timedelta
 import datetime as dt
 from time import mktime
+import requests
 
 from settings import API_KEY
 from constants import COLLATERAL_ASSET
@@ -84,3 +85,22 @@ def extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price: 
 	sims_eth = simulation.asset_extractor_from_sims(price_simulations, 'ETH')
 	df_eth = pd.DataFrame(sims_eth)
 	return df_eth.iloc[point_evaluate_eth_price].nsmallest(1).index
+
+def get_defi_pulse_data(length):
+	URL = 'https://public.defipulse.com/api/GetHistory'
+
+	params = {'length': 365}
+
+	response = requests.get(url=URL, params=params)
+
+	if response.status_code != 200:
+		print('Error retrieving data from the DeFi Pulse API: ' + str(response.status_code))
+
+	df = pd.DataFrame(response.json())
+
+	df['date'] = pd.to_datetime(df['timestamp'], unit='s')
+	df_sorted = df.sort_values('date')
+	df_sorted = df_sorted.set_index('date')
+
+	return df_sorted
+
