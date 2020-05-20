@@ -265,7 +265,7 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
     sns.heatmap(df.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
     ax.set_ylabel('Debt (USD)', fontsize = 18)
     #ax.set_rasterized(rasterized = True)
-    ax.set_xlabel('Initial ETH/DAI liquidity', fontsize = 18)
+    ax.set_xlabel('Initial ETH liquidity', fontsize = 18)
     fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
     ax.tick_params(axis='both', which='major', labelsize=18)
     plt.xticks(rotation=90)
