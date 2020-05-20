@@ -105,18 +105,24 @@ def multivariate_monte_carlo(close_prices, returns_distribution: str, num_simula
 		sim = {}
 
 		for asset in S0.index:
+
+			drift = mu[asset] + 0.5 * sigma[asset]**2
+			print(drift)
 			
 			#Calculate drift
-			drift = (mu[asset] + 0.5 * sigma[asset]**2 - 0.5 * (sigma[asset]**2)) * t
+			drift_component = (drift - 0.5 * (sigma[asset]**2)) * t
 			
 			#Calculate Diffusion
 			if returns_distribution == 'normal':
 				diffusion = W[str(simulation)][asset]  * sigma[asset]
 			if returns_distribution == 'historical':
+				#Original
 				diffusion = W[str(simulation)][asset]
+				#New
+				#diffusion = W[str(simulation)][asset] - sigma[asset] * (mu[asset] - 0.5 * sigma[asset]**2)
 
 			#Make predictions
-			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion+drift))
+			predicted_path = np.append(S0[asset], S0[asset]*np.exp(diffusion+drift_component))
 
 			sim[asset] = predicted_path
 
@@ -215,98 +221,175 @@ def crash_simulator(price_simulations, initial_debt, initial_eth_vol, collateral
 
 	return sims
 
-def undercollateralized_debt(price_simulations, sim_results, point_evaluate_eth_price):
+def extract_sim_fastest_default(crash_sims):
 	'''
-	For the worst eth price outcome, extract the amount of debt that is undercollateralized when the margin goes negative.
+	Extract the simulation number of the simulation that results in the fastest default. 
 	'''
-	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
-	total_margins = sim_results[worst_eth_outcome.values[0]]['total_margin']
-	debts = sim_results[worst_eth_outcome.values[0]]['debt']
+	sim_default_dict = {}
 
-	negative_margins = []
-	#Loop through margins to find the first negative one
-	for index, margin in enumerate(total_margins):
-		if margin < 0:
-			negative_margins.append(index)
-
-	if len(negative_margins) > 0:
-		first_negative_margin_index = negative_margins[0]		
-		debt_when_negative_margin = debts[first_negative_margin_index]
-	elif len(negative_margins) == 0:
-		debt_when_negative_margin = 0
-
-	return debt_when_negative_margin
-
-def crash_debts(debt_levels, liquidity_levels, price_simulations, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, point_evaluate_eth_price):
-	'''
-	For the considered range of debts and liquidities, create a DataFrame of the debt at the point of collapse. 
-	'''
-	df = pd.DataFrame(index = debt_levels, columns = liquidity_levels)
-
-	for i in debt_levels:
-		for j in liquidity_levels:
-			sim_results = crash_simulator(price_simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = collateralization_ratio, quantity_reserve_asset = quantity_reserve_asset, liquidity_dryup = j)
-			debt_when_negative_margin = undercollateralized_debt(price_simulations = price_simulations, sim_results = sim_results, point_evaluate_eth_price = point_evaluate_eth_price)
-			df.loc[int(i)][float(j)] = debt_when_negative_margin
+	for simulation in crash_sims:
+		debts = crash_sims[simulation]['debt']
+		for k, v in enumerate(debts):
+			if v < 0:
+				sim_default_dict[simulation] = k
+				break
+	if sim_default_dict:
+		fastest_default_sim = min(sim_default_dict, key=sim_default_dict.get)
 	
-	return df
+		#Tuple of sim number and how many days the default took
+		return (fastest_default_sim, sim_default_dict[fastest_default_sim])
 
-def protocol_composer(max_number_of_protocols, crash_debts_df, max_oc_requirement):
+def crash_searcher(debt_levels, 
+					liquidity_levels, 
+					price_simulations,
+					initial_eth_vol,
+					collateralization_ratio,
+					quantity_reserve_asset):
 	'''
-	Multiplier in the case of multiple DeFi protocols. 
+	For a set of price simulations, search over the debt and liquidity levels
+	to find the worst outcome. 
 	'''
-	debt_shares_master = []
-	for no_of_protocols in range(1, max_number_of_protocols + 1):
-		per_protocol_debt = crash_debts_df / no_of_protocols
-		debt_shares = []
-		for i in range(1, no_of_protocols + 1):
-			debt_shares.append(per_protocol_debt)
-		debt_shares_master.append(debt_shares)
+	worst_sim_master = []
 
-	collateralization_ratios_master = []
-	for no_of_protocols in range(1, max_number_of_protocols + 1):
-		collateralization_ratios = []
-		for i in range(1, no_of_protocols + 1):
-			collateralization_ratio = uniform(1.0, float(max_oc_requirement))
-			collateralization_ratios.append(collateralization_ratio)
-		collateralization_ratios_master.append(collateralization_ratios)
+	for debt in debt_levels:
+
+		for liquidity in liquidity_levels:
+
+			crash_sims = crash_simulator( \
+				price_simulations = price_simulations, 
+				initial_debt = debt, 
+				initial_eth_vol = initial_eth_vol, 
+				collateralization_ratio = collateralization_ratio, 
+				quantity_reserve_asset = quantity_reserve_asset, 
+				liquidity_dryup = liquidity)
+
+			worst_sim = extract_sim_fastest_default(crash_sims)
+
+			print('For debt ' + str(debt) + ' and liquidity ' + str(liquidity)+ \
+					' the worst sim is ' + str(worst_sim))
+			
+			worst_sim_master.append(debt, liquidity, worst_sim)
 	
-	max_levered_debt = []
-	for i, protocol_debts in enumerate(debt_shares_master):
-		for j, protocol_ratios in enumerate(collateralization_ratios_master):
-			levered_debts = []
-			if i == j:
-				for q in range(len(protocol_debts)):
-					a = protocol_debts[q]/protocol_ratios[q]
-					r = 1/protocol_ratios[q]
-					levered_debt = a/(1-r)
-					levered_debts.append(levered_debt)
-				max_levered_debt.append(levered_debts)
+	return worst_sim_master
+			
+
+
+# def undercollateralized_debt(price_simulations, 
+# 								sim_results, 
+# 								point_evaluate_eth_price):
+# 	'''
+# 	For the worst eth price outcome, 
+# 	extract the amount of debt that is undercollateralized when the margin goes negative.
+# 	'''
+# 	worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, 
+# 																point_evaluate_eth_price = point_evaluate_eth_price)
+	
+# 	total_margins = sim_results[worst_eth_outcome.values[0]]['total_margin']
+
+# 	debts = sim_results[worst_eth_outcome.values[0]]['debt']
+
+# 	negative_margins = []
+# 	#Loop through margins to find the first negative one
+# 	for index, margin in enumerate(total_margins):
+# 		if margin < 0:
+# 			negative_margins.append(index)
+
+# 	if len(negative_margins) > 0:
+# 		first_negative_margin_index = negative_margins[0]		
+# 		debt_when_negative_margin = debts[first_negative_margin_index]
+# 	elif len(negative_margins) == 0:
+# 		debt_when_negative_margin = 0
+
+# 	return debt_when_negative_margin
+
+# def crash_debts(debt_levels, 
+# 				liquidity_levels, 
+# 				price_simulations, 
+# 				initial_eth_vol, 
+# 				collateralization_ratio, 
+# 				quantity_reserve_asset, 
+# 				point_evaluate_eth_price):
+# 	'''
+# 	For the considered range of debts and liquidities, 
+# 	create a DataFrame of the debt at the point of collapse. 
+# 	'''
+# 	df = pd.DataFrame(index = debt_levels, columns = liquidity_levels)
+
+# 	for i in debt_levels:
+
+# 		for j in liquidity_levels:
+
+# 			sim_results = crash_simulator(price_simulations = price_simulations, 
+# 											initial_debt = i, 
+# 											initial_eth_vol = initial_eth_vol, 
+# 											collateralization_ratio = collateralization_ratio, 
+# 											quantity_reserve_asset = quantity_reserve_asset, 
+# 											liquidity_dryup = j)
+
+# 			debt_when_negative_margin = undercollateralized_debt(price_simulations = price_simulations, 
+# 																	sim_results = sim_results, 
+# 																	point_evaluate_eth_price = point_evaluate_eth_price)
+
+# 			df.loc[int(i)][float(j)] = debt_when_negative_margin
+	
+# 	return df
+
+# def protocol_composer(max_number_of_protocols, crash_debts_df, max_oc_requirement):
+# 	'''
+# 	Multiplier in the case of multiple DeFi protocols. 
+# 	'''
+# 	debt_shares_master = []
+# 	for no_of_protocols in range(1, max_number_of_protocols + 1):
+# 		per_protocol_debt = crash_debts_df / no_of_protocols
+# 		debt_shares = []
+# 		for i in range(1, no_of_protocols + 1):
+# 			debt_shares.append(per_protocol_debt)
+# 		debt_shares_master.append(debt_shares)
+
+# 	collateralization_ratios_master = []
+# 	for no_of_protocols in range(1, max_number_of_protocols + 1):
+# 		collateralization_ratios = []
+# 		for i in range(1, no_of_protocols + 1):
+# 			collateralization_ratio = uniform(1.0, float(max_oc_requirement))
+# 			collateralization_ratios.append(collateralization_ratio)
+# 		collateralization_ratios_master.append(collateralization_ratios)
+	
+# 	max_levered_debt = []
+# 	for i, protocol_debts in enumerate(debt_shares_master):
+# 		for j, protocol_ratios in enumerate(collateralization_ratios_master):
+# 			levered_debts = []
+# 			if i == j:
+# 				for q in range(len(protocol_debts)):
+# 					a = protocol_debts[q]/protocol_ratios[q]
+# 					r = 1/protocol_ratios[q]
+# 					levered_debt = a/(1-r)
+# 					levered_debts.append(levered_debt)
+# 				max_levered_debt.append(levered_debts)
 				
-	total_protocol_debt = []
-	for debts in max_levered_debt:
-		total_protocol_debt.append(sum(debts))
+# 	total_protocol_debt = []
+# 	for debts in max_levered_debt:
+# 		total_protocol_debt.append(sum(debts))
 	
-	return total_protocol_debt
+# 	return total_protocol_debt
 		
-def worst_case_per_protocol_number(sims, debt_size, liquidity_param):
-	'''
-	Taking the simulated levered debt losses, find the worst case loss for each economy size.
-	:sims: output of protocol composer
-	'''
-	worst_cases = []
-	number_of_protocols = len(sims)
-	for index in range(number_of_protocols):
-		#List of defaults per protocol size
-		default_size = []
-		for sim in sims:
-			economy_in_sim = sims[index]
-			params_in_economy = economy_in_sim.loc[debt_size][liquidity_param]
-			default_size.append(params_in_economy)
-		index_max = max(range(len(default_size)), key=default_size.__getitem__)
-		value_max = default_size[index_max]
-		worst_cases.append(value_max)
+# def worst_case_per_protocol_number(sims, debt_size, liquidity_param):
+# 	'''
+# 	Taking the simulated levered debt losses, find the worst case loss for each economy size.
+# 	:sims: output of protocol composer
+# 	'''
+# 	worst_cases = []
+# 	number_of_protocols = len(sims)
+# 	for index in range(number_of_protocols):
+# 		#List of defaults per protocol size
+# 		default_size = []
+# 		for sim in sims:
+# 			economy_in_sim = sims[index]
+# 			params_in_economy = economy_in_sim.loc[debt_size][liquidity_param]
+# 			default_size.append(params_in_economy)
+# 		index_max = max(range(len(default_size)), key=default_size.__getitem__)
+# 		value_max = default_size[index_max]
+# 		worst_cases.append(value_max)
 
-	df = pd.DataFrame(worst_cases)
-	df.index +=1
-	return df
+# 	df = pd.DataFrame(worst_cases)
+# 	df.index +=1
+# 	return df
