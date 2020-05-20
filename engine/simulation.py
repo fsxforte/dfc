@@ -107,7 +107,7 @@ def multivariate_monte_carlo(close_prices, returns_distribution: str, num_simula
 		for asset in S0.index:
 
 			drift = mu[asset] + 0.5 * sigma[asset]**2
-			print(drift)
+			# print(drift)
 			
 			#Calculate drift
 			drift_component = (drift - 0.5 * (sigma[asset]**2)) * t
@@ -142,7 +142,12 @@ def asset_extractor_from_sims(simulations, asset):
 	
 	return asset_sims
 
-def crash_simulator(price_simulations, initial_debt, initial_eth_vol, collateralization_ratio, quantity_reserve_asset, liquidity_dryup):
+def crash_simulator(price_simulations, 
+					initial_debt, 
+					initial_eth_vol, 
+					collateralization_ratio, 
+					quantity_reserve_asset, 
+					liquidity_dryup):
 	'''
 	Simulate the behaviour of a system collateralized to exactly 150% which faces downturn such that all debt sold off
 	:price_simulations: monte carlo simulations of correlated price movements
@@ -228,11 +233,12 @@ def extract_sim_fastest_default(crash_sims):
 	sim_default_dict = {}
 
 	for simulation in crash_sims:
-		debts = crash_sims[simulation]['debt']
-		for k, v in enumerate(debts):
+		margins = crash_sims[simulation]['total_margin']
+		for k, v in enumerate(margins):
 			if v < 0:
 				sim_default_dict[simulation] = k
 				break
+
 	if sim_default_dict:
 		fastest_default_sim = min(sim_default_dict, key=sim_default_dict.get)
 	
@@ -268,8 +274,10 @@ def crash_searcher(debt_levels,
 			print('For debt ' + str(debt) + ' and liquidity ' + str(liquidity)+ \
 					' the worst sim is ' + str(worst_sim))
 			
-			worst_sim_master.append(debt, liquidity, worst_sim)
-	
+			crash_tuple = (debt, liquidity, worst_sim)
+			
+			worst_sim_master.append(crash_tuple)
+
 	return worst_sim_master
 			
 

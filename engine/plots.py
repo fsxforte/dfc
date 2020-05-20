@@ -32,6 +32,7 @@ def plot_close_prices(close_prices):
 
     plt.title('ETH/USD close price', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tokens_usd_close_price.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_log_returns(log_returns):
     '''
@@ -47,6 +48,7 @@ def plot_log_returns(log_returns):
 
     plt.title('ETH/USD log returns', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tokens_usd_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_histogram_log_returns(log_returns):
     '''
@@ -62,8 +64,11 @@ def plot_histogram_log_returns(log_returns):
 
     plt.title('ETH/USD log returns', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tokens_usd_histogram_log_returns.pdf', bbox_inches = 'tight', dpi = 300)
 
-def plot_monte_carlo_simulations(price_simulations, correlation: float, returns_distribution: str):
+def plot_monte_carlo_simulations(price_simulations, 
+                                    correlation: float, 
+                                    returns_distribution: str):
     '''
     Plot the simulated prices.
     :price_simulations: input from the Monte Carlo simulator
@@ -81,26 +86,28 @@ def plot_monte_carlo_simulations(price_simulations, correlation: float, returns_
         ax.get_legend().remove()
 
         fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
+        fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/' + asset + str(correlation) + str(returns_distribution) + '_monte_carlo.png', bbox_inches = 'tight', dpi = 300)
 
 
-def plot_worst_simulation(price_simulations, returns_distribution: str, point_evaluate_eth_price, correlation):
+def plot_worst_simulation(price_simulations, 
+                            returns_distribution: str, 
+                            fastest_crash_sim_index, 
+                            correlation):
     '''
     Plot the behaviour of the collateral asset price and the other token prices for the worst outcome from Monte Carlo.
     '''
     #Find the worst collateral asset outcome
     sims_eth = simulation.asset_extractor_from_sims(price_simulations, COLLATERAL_ASSET)
     df_eth = pd.DataFrame(sims_eth)
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price)
-    print('Index of sim featuring worst ' + str(COLLATERAL_ASSET) + ' outcome at ' + str(point_evaluate_eth_price) + ' days: ' + str(worst_eth_outcome.values[0]))
-    worst_eth = df_eth.loc[:, worst_eth_outcome]
-    column_name = worst_eth.columns.values[0]
-    master_df = worst_eth.rename(columns = {column_name: COLLATERAL_ASSET})
+    print('Index of sim featuring worst ' + str(COLLATERAL_ASSET) + ' outcome at ' + str(fastest_crash_sim_index))
+    worst_eth = df_eth.loc[:, fastest_crash_sim_index]
+    master_df = worst_eth.rename('ETH')
 
     #Find the corresponding simulation for the 'RES' asset
     sims_other = simulation.asset_extractor_from_sims(price_simulations, 'RES')
     df_other = pd.DataFrame(sims_other)
-    corresponding_other_sims = df_other.loc[:, worst_eth_outcome]
-    corresponding_other_sims = corresponding_other_sims.rename(columns = {column_name: 'RES'})
+    corresponding_other_sims = df_other.loc[:, fastest_crash_sim_index]
+    corresponding_other_sims = corresponding_other_sims.rename('RES')
     #Join and plot to see correlated movements
     master_df = pd.concat([master_df, corresponding_other_sims], axis = 1)
     
@@ -112,12 +119,13 @@ def plot_worst_simulation(price_simulations, returns_distribution: str, point_ev
     plt.title('The co-evolution of the ETH and reserve token prices', fontsize = 14)
     ax.set_xlabel('Time steps (days)', fontsize = 14)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/' + str(correlation)+ str(returns_distribution) + 'co-evolution.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/'  + str(correlation)+ str(returns_distribution) + 'co-evolution.pdf', bbox_inches = 'tight', dpi = 300)
 
 def plot_crash_sims(debt_levels, 
                     liquidity_levels, 
                     price_simulations, 
                     initial_eth_vol, 
-                    point_evaluate_eth_price, 
+                    fastest_crash_sim_index, 
                     returns_distribution, 
                     correlation):
     '''
@@ -127,8 +135,7 @@ def plot_crash_sims(debt_levels,
     markers = ['s', 'p', 'v',]
     colors = ['g', 'k', 'r']
     fig, ax = plt.subplots(1, 4, figsize=(18,8))
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
-    print('Using worst ' + str(COLLATERAL_ASSET) + ' outcome, ' + str(worst_eth_outcome))
+    print('Using worst ' + str(COLLATERAL_ASSET) + ' outcome, ' + str(fastest_crash_sim_index))
     for i, debt in enumerate(debt_levels):
         debt_master_df_margin = pd.DataFrame(index = range(DAYS_AHEAD))
         debt_master_df_debt = pd.DataFrame(index = range(DAYS_AHEAD))
@@ -144,12 +151,12 @@ def plot_crash_sims(debt_levels,
             
             #Total margins
             df_margins = pd.DataFrame(margin_evolutions)
-            worst_path_margin = df_margins.loc[:, worst_eth_outcome]
+            worst_path_margin = df_margins.loc[:, fastest_crash_sim_index]
             debt_master_df_margin['Margin, '+ 'liq. ' + str(liquidity)] = worst_path_margin
 
             #Remaining debt
             df_debt = pd.DataFrame(debt_evolutions)
-            worst_path_debt = df_debt.loc[:, worst_eth_outcome]
+            worst_path_debt = df_debt.loc[:, fastest_crash_sim_index]
             debt_master_df_debt['Initial debt, ' + 'liq. ' + str(liquidity)] = worst_path_debt
 
         #Margin
@@ -186,40 +193,40 @@ def plot_crash_sims(debt_levels,
     ax[0].set_xlabel('Time steps (days)', fontsize = 14)
     fig.suptitle('A Decentralized Financial Crisis: liquidity and illiquidity causing negative margins', fontsize = 18)
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
-    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + str(point_evaluate_eth_price) + '.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/total_margin_debt' + str(returns_distribution) + str(correlation) + str(fastest_crash_sim_index) + '.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/total_margin_debt' + str(returns_distribution) + str(correlation) + str(fastest_crash_sim_index) + '.pdf', bbox_inches='tight', dpi = 300)
 
-def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, initial_eth_vol, point_evaluate_eth_price):
+
+def plot_heatmap_liquidities(debt_levels, 
+                            liquidity_params, 
+                            price_simulations, 
+                            initial_eth_vol, 
+                            fastest_crash_sim_index):
     '''
     Plot heatmap of days until negative margin for debt and liquidity levels. 
     '''
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
-    df_pairs = pd.DataFrame(index = debt_levels, columns = liquidity_params)
+    df = pd.DataFrame(index = debt_levels, columns = liquidity_params)
     
     for i in debt_levels:
+
         for j in liquidity_params:
-            all_sims = simulation.crash_simulator(price_simulations = price_simulations, initial_debt = i, initial_eth_vol = initial_eth_vol, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = j)
-            #Reconstruct dictionaries for margin and dai liability separately
-            margin_simulations = {}
-            for x in range(1, NUM_SIMULATIONS+1):
-                margin_simulations[str(x)] = all_sims[str(x)]['total_margin']
 
-            worst_margin_path = margin_simulations[worst_eth_outcome.values[0]]
+            crash_sims = simulation.crash_simulator(price_simulations = price_simulations, 
+                                                    initial_debt = i, 
+                                                    initial_eth_vol = initial_eth_vol, 
+                                                    collateralization_ratio = COLLATERALIZATION_RATIO, 
+                                                    quantity_reserve_asset = QUANTITY_RESERVE_ASSET, 
+                                                    liquidity_dryup = j)
 
-            #Find the first day gone negative
-            negative_days = []
-            for index, margin in enumerate(worst_margin_path):
-                if margin < 0:
-                    negative_days.append(index)
-                    first_negative_day = negative_days[0]
-                    df_pairs.loc[int(i)][float(j)] = first_negative_day
-                #else:
-                #	df_pairs.loc[int(i)][float(j)] = 0
+            fastest_default = simulation.extract_sim_fastest_default(crash_sims)
+            
+            df.loc[int(i)][float(j)] = fastest_default[1]
 
-    print(df_pairs)
-    mask = df_pairs.isnull()
+    print(df)
+    mask = df.isnull()
     sns.set(font_scale=1.4)
     fig, ax = plt.subplots(1,1, figsize=(10,8))
-    sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params], rasterized = True)
+    sns.heatmap(df.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in liquidity_params], rasterized = True)
     ax.set_ylabel('Debt (USD)', fontsize = 18)
     ax.set_xlabel('Liquidity parameter', fontsize = 18)
     fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
@@ -228,48 +235,43 @@ def plot_heatmap_liquidities(debt_levels, liquidity_params, price_simulations, i
     plt.xticks(rotation=90)
     ax.figure.axes[-1].yaxis.label.set_size(18)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/first_negative_params.pdf', bbox_inches='tight', dpi = 300)
 
-def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, point_evaluate_eth_price):
+
+def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations, initial_eth_vols, fastest_crash_sim_index):
     '''
     Plot heatmap of days until negative margin for debt and liquidity levels. 
     '''
-    worst_eth_outcome = get_data.extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price = point_evaluate_eth_price)
-    df_pairs = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
+    df = pd.DataFrame(index = debt_levels, columns = initial_eth_vols)
     
     for i in debt_levels:
         for j in initial_eth_vols:
-            all_sims = simulation.crash_simulator(price_simulations = price_simulations, initial_debt = i, initial_eth_vol = j, collateralization_ratio = COLLATERALIZATION_RATIO, quantity_reserve_asset = QUANTITY_RESERVE_ASSET, liquidity_dryup = liquidity_param)
-            #Reconstruct dictionaries for margin and dai liability separately
-            margin_simulations = {}
-            for x in range(1, NUM_SIMULATIONS+1):
-                margin_simulations[str(x)] = all_sims[str(x)]['total_margin']
+            crash_sims = simulation.crash_simulator(price_simulations = price_simulations, 
+                                                    initial_debt = i, 
+                                                    initial_eth_vol = j, 
+                                                    collateralization_ratio = COLLATERALIZATION_RATIO, 
+                                                    quantity_reserve_asset = QUANTITY_RESERVE_ASSET, 
+                                                    liquidity_dryup = liquidity_param)
+            
+            fastest_default = simulation.extract_sim_fastest_default(crash_sims)
+            
+            df.loc[int(i)][float(j)] = fastest_default[1]
 
-            worst_margin_path = margin_simulations[worst_eth_outcome.values[0]]
+    print(df)
 
-            #Find the first day gone negative
-            negative_days = []
-            for index, margin in enumerate(worst_margin_path):
-                if margin < 0:
-                    negative_days.append(index)
-                    first_negative_day = negative_days[0]
-                    df_pairs.loc[int(i)][float(j)] = first_negative_day
-                #else:
-                #	df_pairs.loc[int(i)][float(j)] = 0
-
-    print(df_pairs)
-
-    mask = df_pairs.isnull()
+    mask = df.isnull()
     sns.set(font_scale=1.4)
     fig, ax = plt.subplots(1,1, figsize=(10,8))
-    sns.heatmap(df_pairs.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
+    sns.heatmap(df.astype(float), mask = mask, ax=ax, cmap='YlOrRd_r', yticklabels = [f'{x:,}' for x in debt_levels], xticklabels = [f'{x:,}' for x in initial_eth_vols], rasterized = True)
     ax.set_ylabel('Debt (USD)', fontsize = 18)
     #ax.set_rasterized(rasterized = True)
-    ax.set_xlabel('Initial ETH/DAI liquidity', fontsize = 18)
+    ax.set_xlabel('Initial ETH liquidity', fontsize = 18)
     fig.suptitle('Number of days before Crisis', fontsize = 20, x=0.4)
     ax.tick_params(axis='both', which='major', labelsize=18)
     plt.xticks(rotation=90)
     ax.figure.axes[-1].yaxis.label.set_size(18)
     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/first_negative_vols.pdf', bbox_inches='tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/first_negative_vols.pdf', bbox_inches='tight', dpi = 300)
 
 # def plot_worst_economy_outcomes(df, collateralization_ratio):
 #     '''
@@ -303,3 +305,21 @@ def plot_heatmap_initial_volumes(debt_levels, liquidity_param, price_simulations
 #     fig.suptitle('Financial losses with composable protocols', fontsize = 18)
 #     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
 #     fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/protocol_defaults.pdf', bbox_inches='tight', dpi = 300)
+
+def plot_tvl_defi(df):
+    '''
+    Plot prices of ETH and MKR on two separate y axes. 
+    :df: dataframe of tvl from DeFi pulse. 
+    '''
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.plot(df.index, df['tvlUSD'], label = 'ETH/USD', color = 'k', rasterized = True)
+    ax.set_ylabel('USD', fontsize = 14)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    fig.autofmt_xdate()
+    ax.set_xlabel('')
+
+    plt.title('Total value locked in DeFi projects.', fontsize = 14)
+    fig.savefig('../overleaf/5e8da3bb9abc6a0001c6d632/images/tvldefi.pdf', bbox_inches = 'tight', dpi = 300)
+    fig.savefig('../overleaf/5ebe41169dc1fe00017c8460/figures/tvldefi.pdf', bbox_inches = 'tight', dpi = 300)
