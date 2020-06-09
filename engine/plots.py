@@ -113,7 +113,7 @@ def plot_worst_simulation(price_simulations,
     
     fig, ax = plt.subplots()
     master_df.plot(ax=ax, rasterized = True)
-    ax.set_ylabel('Price evolution, normalized to 1', fontsize = 14)
+    ax.set_ylabel('Price', fontsize = 14)
     ax.tick_params(axis='both', which='major', labelsize=14)
     #ax.set_rasterized(rasterized = True)
     plt.title('The co-evolution of the ETH and reserve token prices', fontsize = 14)

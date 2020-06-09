@@ -86,7 +86,7 @@ def extract_index_of_worst_eth_sim(price_simulations, point_evaluate_eth_price: 
 	df_eth = pd.DataFrame(sims_eth)
 	return df_eth.iloc[point_evaluate_eth_price].nsmallest(1).index
 
-def get_defi_pulse_data(length):
+def get_defi_pulse_data():
 	URL = 'https://public.defipulse.com/api/GetHistory'
 
 	params = {'length': 365}

@@ -14,6 +14,9 @@ from constants import NUM_SIMULATIONS, DAYS_AHEAD, TIME_INCREMENT, DEBTS, LIQUID
 START_DATE = dt.datetime(2018,1,1)
 END_DATE = dt.datetime(2020,2,7)
 
+df = get_data.get_defi_pulse_data()
+plots.plot_tvl_defi(df)
+
 #1. Get close price data for ETH
 close_prices = get_data.get_prices(from_sym=COLLATERAL_ASSET, to_sym='USD', start_date=START_DATE, end_date=END_DATE)
 # close_prices.to_csv('ethprices.csv')
